@@ -1,2 +1,2 @@
-# Thinking-In-C-
+# Thinking In C++
 C++编程思想
