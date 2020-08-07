@@ -84,4 +84,9 @@
 ```
 
 > 代码示例：
+[01-Declare.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/01-Declare.cpp)
+
+**函数声明时参数标识符是可选的，但函数定义时要求要求标识符。**
+
+#### 2.2.1.5 包含头文件
 
