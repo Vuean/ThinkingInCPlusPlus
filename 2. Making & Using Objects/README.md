@@ -84,7 +84,7 @@
 ```
 
 > 代码示例：
-[01-Declare.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/01-Declare.cpp)
+[01_Declare.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/01-Declare.cpp)
 
 **函数声明时参数标识符是可选的，但函数定义时要求要求标识符。**
 
@@ -150,16 +150,25 @@ C/C++程序是变量、函数定义、函数调用的集合。
 
 ### 2.3.4 “Hello, World!”
 
+> 代码示例：
+[02_Hello.cpp]()
+
 ```C++
-    // C02: Hello.cpp
+    // C02-02: Hello.cpp
 
     #include <iostream>
     using namespace std;
 
-    int main() 
+    int main()
     {
         cout << "Hello, World! I am "
              << 8 << " Today!" << endl;
     }
 ```
+
+### 2.3.5 运行编译器
+
+可使用GNU C++编译器。
+
+## 2.4 关于输入输出流
 
