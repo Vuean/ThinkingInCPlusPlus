@@ -151,7 +151,7 @@ C/C++程序是变量、函数定义、函数调用的集合。
 ### 2.3.4 “Hello, World!”
 
 > 代码示例：
-[02_Hello.cpp]()
+[02_Hello.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/02_Hello.cpp)
 
 ```C++
     // C02-02: Hello.cpp
@@ -172,3 +172,35 @@ C/C++程序是变量、函数定义、函数调用的集合。
 
 ## 2.4 关于输入输出流
 
+> 代码示例：
+[03_Stream2.cpp]()
+
+```C++
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        // 用操作器指定格式
+        cout << "a number in decimal: " 
+            << dec << 15 << endl;
+        cout << "a number in octal: " 
+            << oct << 15 << endl;
+        cout << "a number in hex: " 
+            << hex << 15 << endl;
+        cout << "a floating-point number: " 
+            << 3.1415926 << endl;
+        cout << "non-printing char (escape): "
+            << char(27) << endl;
+        return 0;
+    }
+```
+
+上述例子中，输入输出流利用iostream操作符、将数字分别以十进制、八进制和十六进制打印出来（**操作符不进行打印操作，但它给便输出流的状态**）。浮点数的格式由编译器自动确定。此外，通过（显示）**类型转换(cast)**，任何字符都能转换成`char`类型（`char`是保存单字符的数据类型），发送到数据流。
+
+### 2.4.1 字符数组的拼接
+
+C预处理器的一个重要功能就是可以进行**字符数组的拼接**(character array concatenation)。如果两个**加引号**的字符数组邻接，并且它们之间没有标点，编译器就会把这些字符数组连接成单个字符数组。如：
+
+> 代码示例：
+[04_Concat.cpp]()
