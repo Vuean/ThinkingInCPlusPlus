@@ -259,7 +259,7 @@ C预处理器的一个重要功能就是可以进行**字符数组的拼接**(ch
 为使用`string`类，需要包含C++头文件`<string>`。`string`类在命名空间std中，因此需要`using`指令。
 
 > 代码示例：
-[06_HelloStrings.cpp]()
+[06_HelloStrings.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/06_HelloStrings.cpp)
 
 ```C++
     // C02: HelloStrings.cpp
@@ -281,4 +281,71 @@ C预处理器的一个重要功能就是可以进行**字符数组的拼接**(ch
         return 0;
     }
 ```
+
+字符串 s1 和 s2 初始时刻是空的。s3 和 s4 的两种不同初始化方法效果是相同的。向 `string` 对象赋值可用 `=`；连接 `string` 对象用 `+` 操作符。
+
+## 2.6 文件的读写
+
+为进行文件读写操作，必须包含 `<fstream>` 头文件。为了**读**而打开文件，要创建一个 `ifstream` 对象，用法同 `cin`；为了**写**而打开文件，要创建一个 `ofstream` 对象，用法同 `cout`。
+
+`getline()` 函数：用来把文件中一行读入到 `string` 对象中。其第一个参数是 `ifstream` 对象，从中读取内容；第二个参数是 `stream` 对象。如：
+
+> 代码示例：
+[07_Scopy.cpp]()
+
+```C++
+    // C02: Scopy.cpp
+    // Copy one fule to another, a line at a time
+
+    #include <fstream>
+    #include <iostream>
+    #include <string>
+    using namespace std;
+
+    int main()
+    {
+        ifstream in("07_Scopy.cpp");   // Open for reading
+        ofstream out("07_Scopy2.cpp");  // Open for writing
+        string s;
+        while (getline(in, s))
+            out << s << "\n";
+
+        return 0;
+    }
+```
+
+从上面可以看书，为了打开一个文件，只需要将欲建立的文件名交给 `ifstream` 和 `ofstream` 对象即可。
+
+`getline()` 逐行读取字符，遇到换行符终止。`getline()` 将丢弃换行符而不把它存入string对象。因此，想使拷贝的文件看上去和源文件一样，必须加上换行符。
+
+将整个文件拷贝成单独的一个 `string` 对象：
+
+> 代码示例：
+[08_FillString.cpp]()
+
+```C++
+    // C02: FillString.cpp
+    // Read an entire file into a single string
+
+    #include <string>
+    #include <iostream>
+    #include <fstream>
+    using namespace std;
+
+    int main()
+    {
+        ifstream in("08_FillString.cpp");
+        string s, line;
+        while (getline(in, line))
+        {
+            s += line + "\n";
+        }
+        cout << s;
+        return 0;
+    }
+```
+
+`string` 具有动态特性，不必担心 `string` 的内存分配。
+
+## 2.7 vector简介
 
