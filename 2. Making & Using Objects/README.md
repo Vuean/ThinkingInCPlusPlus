@@ -230,8 +230,55 @@ C预处理器的一个重要功能就是可以进行**字符数组的拼接**(ch
 输入输出流提供了读取输入的功能，用来完成标准输入功能的对象是`cin`（"console input"，控制台输入）。和`cin`一起使用的是输入输出流操作符是`>>`，其可接收**与参数类型相同的输入**。如：
 
 > 代码示例：
-[05_Numconv.cpp]()
+[05_Numconv.cpp[](](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/05_Numconv.cpp))
 
 ```C++
-    
+    // C02: Numconv.cpp
+    // 将十进制转换为八进制和十六进制
+
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        int number;
+        cout << "Enter a decimal number: ";
+        cin >> number;
+
+        cout << "value in octal = 0"
+            << oct << number << endl;
+        cout << "value in hex = 0x"
+            << hex << number << endl;
+
+        return 0;
+    }
 ```
+
+### 2.5 字符串简介
+
+为使用`string`类，需要包含C++头文件`<string>`。`string`类在命名空间std中，因此需要`using`指令。
+
+> 代码示例：
+[06_HelloStrings.cpp]()
+
+```C++
+    // C02: HelloStrings.cpp
+    // The basics of the Standard C++ string class
+
+    #include <string>
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        string s1, s2;  // Empty strings
+        string s3 = "hello world!";  // Initialized
+        string s4("I am");// Initialized
+        s2 = "Today";   // assigning to a string
+        s1 = s3 + " " + s4; //combinging strings
+        s1 += " tense ";
+        cout << s1 + s2 + "!" << endl;
+        return 0;
+    }
+```
+
