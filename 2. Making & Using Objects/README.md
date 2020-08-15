@@ -173,22 +173,24 @@ C/C++程序是变量、函数定义、函数调用的集合。
 ## 2.4 关于输入输出流
 
 > 代码示例：
-[03_Stream2.cpp]()
+[03_Stream2.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/03_Stream2.cpp)
 
 ```C++
+    // C02: Stream2.cpp
+    // More streams features
     #include <iostream>
     using namespace std;
 
     int main()
     {
         // 用操作器指定格式
-        cout << "a number in decimal: " 
+        cout << "a number in decimal: "
             << dec << 15 << endl;
-        cout << "a number in octal: " 
+        cout << "a number in octal: "
             << oct << 15 << endl;
-        cout << "a number in hex: " 
+        cout << "a number in hex: "
             << hex << 15 << endl;
-        cout << "a floating-point number: " 
+        cout << "a floating-point number: "
             << 3.1415926 << endl;
         cout << "non-printing char (escape): "
             << char(27) << endl;
@@ -203,4 +205,33 @@ C/C++程序是变量、函数定义、函数调用的集合。
 C预处理器的一个重要功能就是可以进行**字符数组的拼接**(character array concatenation)。如果两个**加引号**的字符数组邻接，并且它们之间没有标点，编译器就会把这些字符数组连接成单个字符数组。如：
 
 > 代码示例：
-[04_Concat.cpp]()
+[04_Concat.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/04_Concat.cpp)
+
+```C++
+    // C02: Concat.cpp
+    // 字符数组拼接
+
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        cout << "This is for too long to put on a "
+            "single line but it can be broken up with "
+            "no ill effects\nas long as three is no "
+            "punctuation separating adjacent character "
+            "arrays.\n";
+        return 0;
+    }
+```
+
+### 2.4.2 读取输入数据
+
+输入输出流提供了读取输入的功能，用来完成标准输入功能的对象是`cin`（"console input"，控制台输入）。和`cin`一起使用的是输入输出流操作符是`>>`，其可接收**与参数类型相同的输入**。如：
+
+> 代码示例：
+[05_Numconv.cpp]()
+
+```C++
+    
+```
