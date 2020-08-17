@@ -1,0 +1,5 @@
+This chapter will introduce enough C++ syntax and 
+program construction concepts to allow you to write 
+and run some simple object-oriented programs. In the 
+subsequent chapter we will cover the basic syntax of C 
+and C++ in detail.
