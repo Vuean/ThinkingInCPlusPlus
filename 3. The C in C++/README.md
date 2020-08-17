@@ -155,7 +155,7 @@ C++使用C的所有执行控制语句。包括`if-else`、`while`、`do-while`�
 ```
 
 > 代码示例：
-[03_Guess.cpp]()
+[03_Guess.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/03_Guess.cpp)
 
 ```C++
     // C03: 03_Guess.cpp
@@ -190,7 +190,7 @@ C++使用C的所有执行控制语句。包括`if-else`、`while`、`do-while`�
 `do-while` 语句与 `while` 语句的区别在于，`do-while` 语句即使表达式第一次计值就为假，前面的语句也至少执行一次。在一般的 `while` 语句中，如果条件第一次为假，语句一次也不会执行。
 
 > 代码示例：
-[04_Guess2.cpp]()
+[04_Guess2.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/04_Guess2.cpp)
 
 ```C++
     // C03: 04_Guess.cpp
@@ -213,4 +213,102 @@ C++使用C的所有执行控制语句。包括`if-else`、`while`、`do-while`�
 ```
 
 ### 3.2.5 for语句
+
+在第一次循环前，`for` 循环执行初始化。然后它执行条件测试，并在每一次循环结束时执行某种形式的“步进”。`for` 循环的形式是：
+
+```C++
+    for(initialization; conditional; step)
+        语句
+```
+
+`for` 循环常用于“计数”任务：
+> 代码示例：
+[05_Charlist.cpp]()
+
+```C++
+    // C03: 05_Charlist.cpp
+    // Display all the ASCII characters
+
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        for(int i = 0; i < 128; i++)
+        {
+            if(i != 26) // ANSI Terminal Clear screen
+                cout << "value: " << i << " characters "
+                    << char(i) // Type conversion
+                    << endl;
+        }
+        return 0;
+    }
+```
+
+### 3.2.6 关键字break和continue
+
+在任何一个`while`、`do-while` 或 `for` 循环的结构体中，都能够使用 `break` 和 `continue` 控制循环的流程。`break` 语句**退出循环，不再执行循环中的剩余语句**。`continue` 语句**停止执行当前的循环，返回到循环的起始处开始新的一轮循环**。
+> 代码示例：
+[06_Menu.cpp]()
+
+```C++
+    // C03: 06_Menu.cpp
+    // Simple menu program demostrating
+
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        char c;
+        while(true){
+            cout << "MAIN MENU" << endl;
+            cout << "l: left, r: right, q: quit -> ";
+            cin >> c;
+            if(c == 'q')
+                break;  // Out of while(true)
+            if(c == 'l'){
+                cout << "LEFT MENU:" << endl;
+                cout << "select a or b: ";
+                cin >> c;
+                if(c == 'a'){
+                    cout << "you chose 'a'." << endl;
+                    continue;   // Back to main menu 
+                }
+                if(c == 'b'){
+                    cout << "you chose 'b'." << endl;
+                    continue; // Back to main menu
+                }
+                else{
+                    cout << "you didn't choose a or b!" << endl;
+                    continue; // Back to main menu
+                }
+            }
+            if(c == 'r'){
+                cout << "RIGHT MENU:" << endl;
+                cout << "select c or d: ";
+                cin >> c;
+                if(c == 'c'){
+                    cout << "you chose 'c'." << endl;
+                    continue;   // Back to main menu
+                }
+                if(c == 'd'){
+                    cout << "you chose 'd'." << endl;
+                    continue; // Back to main menu
+                }
+                else{
+                    cout << "you didn't choose 'c' or 'd'." << endl;
+                    continue; // Back to main menu
+                }
+            }
+            cout << "you must type l or r or q!" << endl;
+        }
+        cout << "quitting menu..." << endl;
+        return 0;
+    }
+```
+
+其中，`while(true)` 语句等价于“永远执行这个循环”。当用户选择‘q’时，`break` 语句使程序跳出这个无限循环。
+
+### 3.2.7 switch语句
 
