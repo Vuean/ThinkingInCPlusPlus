@@ -36,7 +36,7 @@ C++函数原型必须知名函数的返回值类型。如果没有返回值，�
 要从一个函数返回值，必须使用 `return` 语句。`return` 语句退出函数返回到函数调用后的那一点。在一个函数定义中可以有多个 `return` 语句。
 
 > 代码示例：
-[01_Return.cpp]()
+[01_Return.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/01_Return.cpp)
 
 ```C++
     // C03: Return.cpp
@@ -105,7 +105,7 @@ C++使用C的所有执行控制语句。包括`if-else`、`while`、`do-while`�
 “表达式”的值为真或假。“语句”是一个以分号结束的简单语句，或一组包含在大括号里的简单语句构成的一个符合语句。
 
 > 代码示例：
-[02_IfElse.cpp]()
+[02_IfElse.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/02_IfElse.cpp)
 
 ```C++
     // C03: IfElse.cpp
@@ -142,3 +142,75 @@ C++使用C的所有执行控制语句。包括`if-else`、`while`、`do-while`�
         return 0;
     }
 ```
+
+### 3.2.3 while语句
+
+`while`、`do-while`、`for`语句是循环控制语句。一个语句重复执行直到控制表达式的计值为假。
+
+`while` 循环一开始就对表达式进行计算，并在每次重复执行语句之前再次计算。其形式是：
+
+```C++
+    while(表达式)
+        语句
+```
+
+> 代码示例：
+[03_Guess.cpp]()
+
+```C++
+    // C03: 03_Guess.cpp
+    // Guess a number (demonstrates "while")
+
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        int secret = 15;
+        int guess = 0;
+        while( guess != secret ){
+            cout << "guess the number: ";
+            cin >> guess;
+        }
+        cout << "You guessed it!" << endl;
+        return 0;
+    }
+```
+
+### 3.2.4 do-while语句
+
+`do-while` 的形式是：
+
+```C++
+    do
+        语句
+    while(表达式)
+```
+
+`do-while` 语句与 `while` 语句的区别在于，`do-while` 语句即使表达式第一次计值就为假，前面的语句也至少执行一次。在一般的 `while` 语句中，如果条件第一次为假，语句一次也不会执行。
+
+> 代码示例：
+[04_Guess2.cpp]()
+
+```C++
+    // C03: 04_Guess.cpp
+    // The guess program using do-while
+
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        int secret = 15;
+        int guess; // No initialization needed here
+        do{
+            cout << "guess the number: ";
+            cin >> guess;
+        } while(guess != secret);
+        cout << "You got it!" << endl;
+        return 0;
+    }
+```
+
+### 3.2.5 for语句
+
