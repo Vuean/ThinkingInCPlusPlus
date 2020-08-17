@@ -352,7 +352,7 @@ C预处理器的一个重要功能就是可以进行**字符数组的拼接**(ch
 `vector` 类是一个**模板(twmplate)**，可有效地用于不同的类型。为了使用`vector` 类，需要包含头文件 `<vector>`：
 
 > 代码示例：
-[09_ FillVector.cpp]()
+[09_ FillVector.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/09_FillVector.cpp)
 
 ```C++
     // C02: FillVector.cpp
@@ -382,7 +382,7 @@ C预处理器的一个重要功能就是可以进行**字符数组的拼接**(ch
 修改上述程序，使之把输入分解成由空格分隔的单词而不是一些行。如：
 
 > 代码示例：
-[10_GetWords.cpp]()
+[10_GetWords.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/10_GetWords.cpp)
 
 ```C++
     // C02: GetWords.cpp
@@ -412,7 +412,7 @@ C预处理器的一个重要功能就是可以进行**字符数组的拼接**(ch
 其中，`while(in >> word)` 表示每次取输入的一个单词，当表达式的值为false时，就意味着文件读完了。
 
 `vector<int>` 示例：
-[11_IntVector.cpp]()
+[11_IntVector.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/11_IntVector.cpp)
 
 ```C++
     // C02: IntVector.cpp
@@ -453,31 +453,31 @@ C预处理器的一个重要功能就是可以进行**字符数组的拼接**(ch
 ## 2.9 练习
 
 2-1 修改**Hello.cpp**，使它能打印你的名字和年龄（或者你的鞋码、爱犬的年龄等）。编译并运行修改后的程序。
-> [ex1.cpp]()
+> [ex1.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/Exercise/ex1.cpp)
 
 2-2 以**Stream.cpp**、**Numconv.cpp**为例，编写一个程序，让它根据输入的半径值求出圆面积，并打印。
-> [ex2.cpp]()
+> [ex2.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/Exercise/ex2.cpp)
 
 2-3 编写一个程序用来打开文件并统计文件中以空格隔开的单词数目。
-> [ex3.cpp]()
+> [ex3.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/Exercise/ex3.cpp)
 
 2-4 编写一个程序统计文件中特定单词的出现次数（要求使用string类的运算符“==”来查找单词）。
-> [ex4]()
+> [ex4.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/Exercise/ex4.cpp)
 
 2-5 修改**FillVector.cpp**使它能够从后向前打印各行。
-> [ex5]()
+> [ex5.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/Exercise/ex5.cpp)
 
 2-6 修改**FillVector.cpp**使它能把**vector**中的所有元素连接成单独的一个字符串，并打印，但不加上行号。
-> [ex6]()
+> [ex6.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/Exercise/ex6.cpp)
 
 2-7 编写一个程序，一次显示文件的一行，然后，等待用户按回车键后显示下一行。
-> [ex7.cpp]()
+> [ex7.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/Exercise/ex7.cpp)
 
 2-8 创建一个**vector<float>**，并用一个**for**循环语句向它输入25各浮点数，显示**vector**的结果。
-> [ex8.cpp]()
+> [ex8.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/Exercise/ex8.cpp)
 
 2-9 创建三个**vector<float>**对象，与第8题一样填写前两个对象。编一个**for**循环，把前两个**vector**的每一个相应元素相加起来，结果放入第三个**vector**的相应元素中。显示这三个**vector**的结果。
-> [ex9.cpp]()
+> [ex9.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/Exercise/ex9.cpp)
 
 2-10 编写一个程序，创建一个**vector<float>**，想前面的练习那样输入25个数。求每个数的平方，并把它们放入vector的同样位置。显示运算前后的**vector**。
-> [ex10.cpp]()
+> [ex10.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/2.%20Making%20%26%20Using%20Objects/Exercise/ex10.cpp)
