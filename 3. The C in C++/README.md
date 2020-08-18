@@ -444,7 +444,7 @@ C++使用C的所有执行控制语句。包括`if-else`、`while`、`do-while`�
 
 自减运算符是`--`，意思是“减小一个单位”。自增运算符是`++`，意思是“增加一个单位”。自增和自减产生一个变量的值作为结果。如果运算符在变量之前出现（即`++A`），**则先执行运算，再产生结果值**。如果运算符在变量之后出现（即`A++`），**则产生当前值，再执行运算**。例如：
 > 代码示例：
-[10_AutoIncrement.cpp]()
+[10_AutoIncrement.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/10_AutoIncrement.cpp)
 
 ```C++
     // C03:10_AutoIncrement.cpp
@@ -478,7 +478,7 @@ C++使用C的所有执行控制语句。包括`if-else`、`while`、`do-while`�
 C和C++中有4个基本的内部数据类型。`char` 存储**字符**，使用最小的8位（一个字节）的存储，尽管它可能占用更大的空间。`Int` 存储**整数值**，使用最小两个字节的存储空间。`float` 和 `double` 类型存储**浮点数**，一般使用IEEE的浮点格式。`float` 用于单精度浮点数，`double` 用于双精度浮点数。
 
 > 代码示例：
-[11_Basic.cpp]()
+[11_Basic.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/11_Basic.cpp)
 
 ```C++
     // C03:11_Basic.cpp
@@ -521,12 +521,126 @@ C和C++中有4个基本的内部数据类型。`char` 存储**字符**，使用�
 
 下面的例子使用`sizeof`运算符显示用字节表示的数据类型的大小：
 > 代码示例：
-[12_Sepcify.cpp]()
+[12_Sepcify.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/12_Sepcify.cpp)
 
 ```C++
+    // C03:12_Specify.cpp
+    // Demonstrates the use of specifiers
 
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        char c;
+        unsigned char cu;
+        int i;
+        unsigned int iu;
+        short int is;
+        short iis;  // same as short int
+        unsigned short int isu;
+        unsigned short iisu;
+        long int il;
+        long iil;   // same as long int
+        unsigned long int ilu;
+        unsigned long iilu;
+        float f;
+        double d;
+        long double ld;
+
+        cout 
+            << "\n char= " << sizeof(c)
+            << "\n unsigned char= " << sizeof(cu)
+            << "\n int= " << sizeof(i)
+            << "\n unsigned int= " << sizeof(iu)
+            << "\n short = " << sizeof(is)
+            << "\n unsigned short= " << sizeof(isu)
+            << "\n long = " << sizeof(il)
+            << "\n unsigned long= " << sizeof(ilu)
+            << "\n float = " << sizeof(f)
+            << "\n double = " << sizeof(d)
+            << "\n long double = " << sizeof(ld)
+            << endl;
+        return 0;
+    }
 ```
 
 其中，当用`short`或`long`改变`int`时，关键字`int`是可选的。
 
 ### 3.4.4 指针简介
+
+程序中的所有元素都驻留在内存的某处。内存一般被布置成一系列连续的内存位置；我们通常把这些位置看做是**8位字节**，但实际上每一个空间的大小取决于具体机器的结构，一般称为机器的**字长（word size）**。每一个空间可按它的地址与其他空间区分。
+
+因为程序运行时驻留内存中，所以程序中的每一个元素都有地址。程序运行的时候，程序中的每一个元素在内存中都占有一个位置。甚至函数也占用内存。
+> 代码示例：
+[13_YourPets1.cpp]()
+
+```C++
+    // C03: 13_YourPets1.cpp
+
+    #include <iostream>
+    using namespace std;
+
+    int dog, cat, bird, fish;
+
+    void f(int pet)
+    {
+        cout << "pet id number: " << pet << endl;
+    }
+
+    int main()
+    {
+        int i, j, k;
+        return 0;
+    }
+```
+
+`&`：取址运算符，可获得标识符的地址。
+> 代码示例：
+[14_YourPets2.cpp]()
+
+```C++
+// C03: 14_YourPets2.cpp
+
+#include <iostream>
+using namespace std;
+
+int dog, cat, bird, fish;
+
+void f(int pet)
+{
+    cout << "pet id number: " << pet << endl;
+}
+
+int main()
+{
+    int i, j, k;
+
+    cout << "f(): " << (long) &f << endl;
+    cout << "dog: " << (long) &dog << endl;
+    cout << "cat: " << (long) &cat << endl;
+    cout << "bird: " << (long) &bird << endl;
+    cout << "fish: " << (long) &fish << endl;
+    cout << "i: " << (long) &i << endl;
+    cout << "j: " << (long) &j << endl;
+    cout << "k: " << (long) &k << endl;
+    return 0;
+}
+```
+
+`(long)` 是一种**类型转换（cast）**。在此处不是必须的。
+
+C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指针的运算符为`*`。定义指针时，必须规定它指向的变量类型。如一个指向`int`的指针：`int* ip`。同时，C++编程的一般原则是**在定义指针时进行初始化**。
+
+```C++
+    int a = 47;
+    int *ipa = &a;
+```
+
+上述中，已经初始化了整型变量`a`和整型指针`ipa`，`ipa`存放了`a`的地址。指针常用的两大用途：
+
+1. 为了能在函数内改变“外部对象”。
+2. 为了获取更多灵活的编程技巧。
+
+### 3.4.5 修改外部对象
+
