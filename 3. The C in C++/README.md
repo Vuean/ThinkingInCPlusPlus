@@ -330,7 +330,7 @@ C++使用C的所有执行控制语句。包括`if-else`、`while`、`do-while`�
 其中，`break` 是可选得，如果省略它，`case` 语句会顺序执行它后面的语句。
 
 > 代码示例：
-[07_Menu2.cpp]()
+[07_Menu2.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/07_Menu2.cpp)
 
 ```C++
     // C03:07_Menu2.cpp
@@ -364,4 +364,73 @@ C++使用C的所有执行控制语句。包括`if-else`、`while`、`do-while`�
 ```
 
 ### 3.2.8 使用和滥用goto
+
+`goto` 是一种不好的编程方式，经常避免使用 `goto`。
+
+> 代码示例：
+[08_gotoKeyword.cpp]()
+
+```C++
+    // C03:08_gotoKeyword.cpp
+    // The infamous goto is supported in C++
+
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        long val;
+        for (int i = 0; i < 1000; i++)
+        {
+            for (int j = 1; j < 100; j += 10)
+            {
+                val = i * j;
+                if(val > 47000)
+                    goto bottom;
+                    // Break would only go on the outer 'for'
+            }
+        }
+        bottom:
+        cout << val << endl;
+        return 0;
+    }
+```
+
+一个可供选择的方法是设置一个布尔值，在外层 `for` 循环对它进行测试，然后利用 `break` 从内层 `for` 循环跳出。
+
+### 3.2.9 递归
+
+递归可以在函数内部，调用函数本身。
+
+> 代码示例：
+[09_CatsInHats.cpp]()
+
+```C++
+    // C03:10_CatsInHats.cpp
+    // Simple demonstration of recursion
+
+    #include <iostream>
+    using namespace std;
+
+    void removeHat(char cat)
+    {
+        for(char c = 'A'; c < cat; c++)
+            cout << " ";
+        if(cat <= 'Z'){
+            cout << "cat " << cat << endl;
+            removeHat(cat+1);
+        }
+        else
+            cout << "VOOM!!!" << endl;
+    }
+
+    int main()
+    {
+        removeHat ('A');
+    }
+```
+
+在 `removeHat()` 中，只要 `cat` 的值小于'Z'，就会在 `removeHat()` 中调用 `removeHat()`，从而实现递归。每次调用 `removeHat()`，它的参数比当前的 `cat` 值增加1，所以参数不断增加，直到大于'Z'。
+
+## 3.3 运算符简介
 
