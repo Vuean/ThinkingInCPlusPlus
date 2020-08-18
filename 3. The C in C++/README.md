@@ -223,7 +223,7 @@ C++使用C的所有执行控制语句。包括`if-else`、`while`、`do-while`�
 
 `for` 循环常用于“计数”任务：
 > 代码示例：
-[05_Charlist.cpp]()
+[05_Charlist.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/05_Charlist.cpp)
 
 ```C++
     // C03: 05_Charlist.cpp
@@ -249,7 +249,7 @@ C++使用C的所有执行控制语句。包括`if-else`、`while`、`do-while`�
 
 在任何一个`while`、`do-while` 或 `for` 循环的结构体中，都能够使用 `break` 和 `continue` 控制循环的流程。`break` 语句**退出循环，不再执行循环中的剩余语句**。`continue` 语句**停止执行当前的循环，返回到循环的起始处开始新的一轮循环**。
 > 代码示例：
-[06_Menu.cpp]()
+[06_Menu.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/06_Menu.cpp)
 
 ```C++
     // C03: 06_Menu.cpp
@@ -273,7 +273,7 @@ C++使用C的所有执行控制语句。包括`if-else`、`while`、`do-while`�
                 cin >> c;
                 if(c == 'a'){
                     cout << "you chose 'a'." << endl;
-                    continue;   // Back to main menu 
+                    continue;   // Back to main menu
                 }
                 if(c == 'b'){
                     cout << "you chose 'b'." << endl;
@@ -311,4 +311,57 @@ C++使用C的所有执行控制语句。包括`if-else`、`while`、`do-while`�
 其中，`while(true)` 语句等价于“永远执行这个循环”。当用户选择‘q’时，`break` 语句使程序跳出这个无限循环。
 
 ### 3.2.7 switch语句
+
+`switch` 语句根据一个**整型表达式**的值从几段代码中选择执行。它的形式是：
+
+```C++
+    switch(selector){
+    case integral-valuel: statement; break;
+    case integral-value2: statement; break;
+    case integral-value3: statement; break;
+    case integral-value4: statement; break;
+    case integral-value5: statement; break;
+    (...)
+    default: statement;
+```
+
+选择器(selector)是一个产生整数值的表达式。`switch` 语句把选择器(selector)的结果和每一个整数值(integral-value)比较。如果发现匹配，就执行对应的语句（简单语句或复合语句）。如果都不匹配，则执行`default`语句。
+
+其中，`break` 是可选得，如果省略它，`case` 语句会顺序执行它后面的语句。
+
+> 代码示例：
+[07_Menu2.cpp]()
+
+```C++
+    // C03:07_Menu2.cpp
+    // A menu  using a switch statement
+
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        bool quit = false;
+        while (quit == false){
+            cout << "Select a, b, c or q to quit: ";
+            char response;
+            cin >> response;
+            switch(response){
+                case 'a' : cout << "you choose 'a'" << endl;
+                        break;
+                case 'b' : cout << "you choose 'b'" << endl;
+                        break;
+                case 'c' : cout << "you choose 'c'" << endl;
+                        break;
+                case 'q' : cout << "quitting menu" << endl;
+                        quit = true;
+                        break;
+                default: cout << "Please use a, b, c or q!" << endl;
+            }
+        }
+        return 0;
+    }
+```
+
+### 3.2.8 使用和滥用goto
 
