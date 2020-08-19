@@ -684,7 +684,7 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
 
 当在函数`f()`内部时，变量x就是外部对象（outside object）。显然，改变局部变量并不会影响外部变量，因为它们分别放在存储空间的不同位置。但是，如果我们的确想修改外部对象那又该怎么办呢？这时指针就该派上用场了。在某种意义上，**指针是另一个变量的别名**。所以如果我们不是传递一个普通的值而是传递一个指针给函数，实际上就是传递外部对象的别名，使函数能修改外部对象，如像：
 > 代码示例：
-[16_PassAddress.cpp]()
+[16_PassAddress.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/16_PassAddress.cpp)
 
 ```C++
     // C03:16_PassAddress.cpp
@@ -728,7 +728,7 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
 **引用传递（pass-by-reference）**：用引用传递参数地址。
 
 > 代码示例：
-[17_PassReference.cpp]()
+[17_PassReference.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/17_PassReference.cpp)
 
 ```C++
     // C03:17_PassReference.cpp
@@ -770,7 +770,7 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
 
 将基本的数据类型`char`、`int`、`float`和`double`，与修饰符`signed`、`unsigned`、`short`和`long`，以及指针和引用（它们与基本数据类型和修饰符是独立的），可以产生三倍的结合：
 > 代码示例：
-[18_AllDefinitions.cpp]()
+[18_AllDefinitions.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/18_AllDefinitions.cpp)
 
 ```C++
     //：C03：A11Definitions.cpp
@@ -791,3 +791,45 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
     {}
 ```
 
+这里有和指针一起工作的另一种类型：`void`。如果声明指针是`void*`，它意味着任何类型的地址都可以间接引用那个指针（而如果声明`int*`，则只能对`int`型变量的地址间接引用那个指针）。
+> 代码示例：
+[19_VoidPointer.cpp]()
+
+```C++
+    // C03:19_VoidPointer.cpp
+
+    #include <iostream>
+    using namespace std;
+    int main()
+    {
+        void* vp;
+        char c;
+        int i;
+        float f;
+        double d;
+        // The address of ANY type can be assigned to a void pointer:
+        vp = &c;
+        vp = &i;
+        vp = &f;
+        vp = &d;
+    }
+```
+
+一旦简介引用一个`void*`，就会丢失关于类型的信息。这意味着在使用前，必须转换为正确的类型：
+> 代码示例：
+[20_CasrFromVoidPointer.cpp]()
+
+```C++
+    // C03:20_CasrFromVoidPointer.cpp
+
+    int main()
+    {
+        int i = 99;
+        void* vp = &i;
+        // Can't dereference(解除引用) a void pointer:
+        // *vp = 3; // compile-time error
+        // Must cast back to int before dereferencing:
+        *((int*)vp) = 3;
+        return 0;
+    }
+```
