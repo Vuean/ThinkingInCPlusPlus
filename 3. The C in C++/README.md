@@ -793,7 +793,7 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
 
 这里有和指针一起工作的另一种类型：`void`。如果声明指针是`void*`，它意味着任何类型的地址都可以间接引用那个指针（而如果声明`int*`，则只能对`int`型变量的地址间接引用那个指针）。
 > 代码示例：
-[19_VoidPointer.cpp]()
+[19_VoidPointer.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/19_VoidPointer.cpp)
 
 ```C++
     // C03:19_VoidPointer.cpp
@@ -817,7 +817,7 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
 
 一旦简介引用一个`void*`，就会丢失关于类型的信息。这意味着在使用前，必须转换为正确的类型：
 > 代码示例：
-[20_CasrFromVoidPointer.cpp]()
+[20_CasrFromVoidPointer.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/20_CasrFromVoidPointer.cpp)
 
 ```C++
     // C03:20_CasrFromVoidPointer.cpp
@@ -833,3 +833,48 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
         return 0;
     }
 ```
+
+转换`(int*)vp`告诉编译器把`void*`当作`int*`处理，因此可以成功地对它间接引用。同时也有可能将`int*`转换为一个`char*`或`double*`，这将改变已经分配给`int`的存储空间大小，可能会引起程序崩溃。因此应当避免使用`void`指针。
+
+## 3.5 作用域
+
+作用域规则告诉我们一个变量的有效范围，它在哪里创建，在哪里销毁。**变量的有效作用域从它的定义点开始，到和定义变量之前最邻近的开括号配对的第一个闭括号**。也就是说，作用域由变量所在的最近一对括号确定。说明如下：
+> 代码示例：
+[21_Scope.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/21_Scope.cpp)
+
+```C++
+    // C03：Scope.cpp
+    //How variables are scoped
+    using namespace std;
+
+    int main()
+    {
+        int scpl;
+        //scpl visible here
+        {
+            //scpl still visible here
+            // ......
+            int scp2;
+            //scp2 visible here
+            // ......
+            {
+                //scp1&scp2 still visible here
+                // .....
+                int scp3;
+                //scp1，scp2 & scp3 visible here
+                // ......
+            }//<--scp3 destroyed here
+            // scp3 not available here
+            // scpl & scp2 still visible here
+            //......
+        } //<--scp2 destroyed here
+        // scp3 & scp2 not available here
+        //scp1 still visible here
+        // ......
+    }  //<--scp1 destroyed here
+```
+
+上面的例子表明什么时候变量是可见的，什么时候变量是不可用的（即变量越出其作用域）。只有在变量的作用域内，才能使用它。作用域可以嵌套，即在一对大括号里面有其他的大括号对。嵌套意味着可以在我们所处的作用域内访问外层作用域的一个变量。上面的例子中，变量scp1在所有的作用域内都可用，而scp3只能在最里面的作用域内才可用。
+
+### 3.5.1 定时定义变量
+
