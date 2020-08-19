@@ -647,7 +647,7 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
 通常，向函数传递参数时，在函数内部生成该参数的一个拷贝。这称为**按值传递(pass-by-value)**。在下面的程序中能看到按值传递的效果：
 
 > 代码示例：
-[15_PassByValue.cpp]()
+[15_PassByValue.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/15_PassByValue.cpp)
 
 ```C++
     // C03: 15_PassByValue.cpp
@@ -679,3 +679,115 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
     a= 5
     x= 47
 ```
+
+在函数`f()`中，`a`是一个局部变量（local variable），它只有在调用函数`f()`期间存在。因为它是一个函数参数，所以调用函数时通过参数传递来初始化a的值；在main函数中参数是x，其值为47，所以当调用函数`f()`时，这个值被拷贝到a中。
+
+当在函数`f()`内部时，变量x就是外部对象（outside object）。显然，改变局部变量并不会影响外部变量，因为它们分别放在存储空间的不同位置。但是，如果我们的确想修改外部对象那又该怎么办呢？这时指针就该派上用场了。在某种意义上，**指针是另一个变量的别名**。所以如果我们不是传递一个普通的值而是传递一个指针给函数，实际上就是传递外部对象的别名，使函数能修改外部对象，如像：
+> 代码示例：
+[16_PassAddress.cpp]()
+
+```C++
+    // C03:16_PassAddress.cpp
+
+    #include <iostream>
+    using namespace std;
+
+    void f(int* p)
+    {
+        cout << "p = " << p << endl;
+        cout << "*p = " << *p << endl;
+        *p = 5;
+        cout << "p = " << p << endl;
+    }
+
+    int main()
+    {
+        int x = 47;
+        cout << "x = " << x << endl;
+        cout << "&x = " << &x << endl;
+        f(&x);
+        cout << "x = " << x << endl;
+        return 0;
+    }
+```
+
+```C++
+    输出结果：
+    x = 47
+    &x = 0x61fe1c
+    p = 0x61fe1c
+    *p = 47
+    p = 0x61fe1c
+    x = 5
+```
+
+现在函数`f()`把指针作为参数，并且在赋值期间间接引用这个指针，这就使得外部对象`x`被修改。`p`中的值就是变量`x`的地址，指针`p`的确是指向变量`x`。当改变指针`p`指向的变量值并间接引用赋值为5，我们看到变量`x`的值现在已经改变为5了。
+
+### 3.4.6 C++引用简介
+
+**引用传递（pass-by-reference）**：用引用传递参数地址。
+
+> 代码示例：
+[17_PassReference.cpp]()
+
+```C++
+    // C03:17_PassReference.cpp
+
+    #include <iostream>
+    using namespace std;
+
+    void f(int& r)
+    {
+        cout << "r = " << r << endl;
+        cout << "&r = " << &r << endl;
+        r = 5;
+        cout << "r = " << r << endl;
+    }
+
+    int main()
+    {
+        int x = 47;
+        cout << "x = " << x << endl;
+        cout << "&x = " << &x << endl;
+        f(x);
+        cout << "x = " << x << endl;
+        return 0;
+    }
+```
+
+```C++
+    x = 47
+    &x = 0x61fe1c
+    r = 47
+    &r = 0x61fe1c
+    r = 5
+    x = 5
+```
+
+以引用传递允许一个函数去修改外部对象，就像传递一个指针所做的那样。
+
+### 3.4.7 用指针和引用作为修饰符
+
+将基本的数据类型`char`、`int`、`float`和`double`，与修饰符`signed`、`unsigned`、`short`和`long`，以及指针和引用（它们与基本数据类型和修饰符是独立的），可以产生三倍的结合：
+> 代码示例：
+[18_AllDefinitions.cpp]()
+
+```C++
+    //：C03：A11Definitions.cpp
+    //A11possible combinations of basic data types，specifiers，pointers and references.
+    #include<iostream>
+    using namespace std;
+
+    void fl(char c, int i, float f, double d);
+    void f2(short int si,long int li,long double ld);
+    void f3(unsigned char uc, unsigned int ui, unsigned short int usi, unsigned long int uli);
+    void f4(char*cp, int*ip, float*fp, double*dp);
+    void f5(short int*sip, long int*lip, long double*ldp);
+    void f6(unsigned char*ucp,unsigned int*uip, unsigned short int*usip, unsigned long int* ulip);
+    void f7(char& cr, int& ir, float& fr, double&dr);
+    void f8(short int& sir, long int& lir, long double& ldr);
+    void f9(unsigned char& ucr, unsigned int& uir, unsigned short int& usir, unsigned long int& ulir);
+    int main()
+    {}
+```
+
