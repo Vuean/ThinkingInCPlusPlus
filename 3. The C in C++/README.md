@@ -876,5 +876,48 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
 
 上面的例子表明什么时候变量是可见的，什么时候变量是不可用的（即变量越出其作用域）。只有在变量的作用域内，才能使用它。作用域可以嵌套，即在一对大括号里面有其他的大括号对。嵌套意味着可以在我们所处的作用域内访问外层作用域的一个变量。上面的例子中，变量scp1在所有的作用域内都可用，而scp3只能在最里面的作用域内才可用。
 
-### 3.5.1 定时定义变量
+### 3.5.1 实时定义变量
+
+读C代码时， 进入一个作用域， 首先看到的是一个变量的定义块，在块的开始部分声明所
+有的变量。C+＋(不是C)允许在作用域内的任意地方定义变量， 所以可以在正好使用它之前定义。
+> 代码示例：
+[22_OnTheFly.cpp]()
+
+```C++
+    // C03:22_OnTheFly.cpp
+    // On-the-fly variable definitions
+
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        {   // Begin a new scope
+            int q = 0;  // C requires definitions here
+            // ...
+            // Define at point of use:
+            for(int i = 0; i < 100; ++i){
+                q++;    // q comes from a larger scope
+                // Definition at the end of the scope:
+                int p = 12;
+            }
+            int p = 1;  // A different p
+        }   // End scope containing q & outer p
+        cout << "Tpe characters:" << endl;
+        while(char c = cin.get() != 'q'){
+            cout << c << " wasn't it" << endl;
+            if(char x = c == 'a' || c == 'b')
+                cout << "You typed a or b" << endl;
+            else
+                cout << "You typed " << x << endl;
+        }
+        cout << "Type A, B, or C" << endl;
+        switch(int i = cin.get()){
+            case 'A': cout << "snap" << endl; break;
+            case 'B': cout << "Crackle" << endl; break;
+            case 'C': cout << "Pop" << endl; break;
+            default: cout << "Not A, B or C!" << endl;
+        }
+    }
+```
 
