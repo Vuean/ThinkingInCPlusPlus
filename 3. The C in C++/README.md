@@ -881,7 +881,7 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
 读C代码时， 进入一个作用域， 首先看到的是一个变量的定义块，在块的开始部分声明所
 有的变量。C+＋(不是C)允许在作用域内的任意地方定义变量， 所以可以在正好使用它之前定义。
 > 代码示例：
-[22_OnTheFly.cpp]()
+[22_OnTheFly.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/22_OnTheFly.cpp)
 
 ```C++
     // C03:22_OnTheFly.cpp
@@ -920,4 +920,115 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
         }
     }
 ```
+
+尽管例子表明在`while`语句、`if`语句和`switch`语句中也可以定义变量， 但是可能因为语法受到许多限制， 这种定义不如在`for`的表达式中常用。例如，**我们不能有任何插入括号**。也比可以写出：
+
+```C++
+    while((char c = cin.get()) != 'q')
+```
+
+附加的括号似乎是合理的，但因为无法使用括号，结果就不像所希望的那样。同时，因为 `！=` 比 `=` 的优先级高， 所以`char c`最终含有的值是由`bool`转换为`char`的。
+
+## 3.6 指定存储空间分配
+
+### 3.6.1 全局变量
+
+全局变量是在所有函数体的外部定义的， 程序的所有部分（甚至其他文件中的代码）都
+可以使用。如果在一个文件中使用`extern`关键字来声明**另一个文件中存在的全局变量**， 那么这个文件可以使用这个数据。
+> 代码示例：
+[23_Global.cpp]()
+
+```C++
+    // C03:23_Global.cpp
+    // Demonstration of global variables
+
+    #include <iostream>
+    using namespace std;
+
+    int globe;
+    void func();
+    int main()
+    {
+        globe = 12;
+        cout << globe << endl;
+        func(); //Modifies globe
+        cout << globe << endl;
+    }
+```
+
+```C++
+    // C03: 23_Global2.cpp
+    // Accessing external global variables
+    extern int globe;
+    void func()
+    {
+        globe = 47;
+    }
+```
+
+变量`globe`的存储空间是在程序Global.cpp中定义创建的，在Global2.cpp的代码中可以
+访问同一个变量。由于Global2.cpp和Global.cpp的代码是分段编译的，必须通过声明：`extern int globe`告诉编译器变量存在哪里。运行这个程序时，会看到函数`func()`的调用的确影响`globe`的全局实例。
+> 备注vecode编译未通过
+
+### 3.6.2 静态变量
+
+静态变量（static）初始化只在函数第一次调用时执行，函数调用之间变益的值保持不变。static变址的优点是**在函数范围之外它是不可用的**。
+> 代码示例：
+[24_Static.cpp]()
+
+```C++
+    // C03:24_Static.cpp
+    // Using a static variable in a function
+
+    #include <iostream>
+    using namespace std;
+
+    void func()
+    {
+        static int i = 0;
+        cout << "i = " << ++i << endl;
+    }
+
+    int main()
+    {
+        for(int x = 0; x < 10; ++x)
+            func();
+        return 0;
+    }
+```
+
+每一次在`for`循环中调用函数`func()`时，它都打印不同的值（在本示例中输出1~10）。如果不使用关键字`static`, 打印出的值总是'1'。
+
+`static`的第二层意思是：“在某个作用域外不可访问”。当应用`static`于函数名和所有函数外部的变量时， 它的意思是“在文件的外部不可以使用这个名字”。函数名或变量是局部于文件的；我们说它具有**文件作用域(file scope)**。
+> 代码示例：
+[25_FileStatic.cpp]()
+
+```C++
+    // C03:25_FileStatic.cpp
+    // File scope demonstration. Compiling and linking this file with
+    // 25_FileStatic2.cpp will cause a linker error.
+
+    // File scope means only available in this file:
+    static int fs;
+
+    int main()
+    {
+        fs = 1;
+    }
+```
+
+尽管在下面的文件中变量`fs`被声明为`extern`，但是连接器不会找到它，因为在FileStatic.cpp中它被声明为`static`。
+
+```C++
+    // C03: 25_FileStatic2.cpp
+    // Trying to reference fs
+
+    extern int fs;
+    void func()
+    {
+        fs = 100;
+    }
+```
+
+### 3.6.4 外部变量
 
