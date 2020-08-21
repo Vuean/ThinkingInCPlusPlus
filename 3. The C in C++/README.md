@@ -936,7 +936,7 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
 全局变量是在所有函数体的外部定义的， 程序的所有部分（甚至其他文件中的代码）都
 可以使用。如果在一个文件中使用`extern`关键字来声明**另一个文件中存在的全局变量**， 那么这个文件可以使用这个数据。
 > 代码示例：
-[23_Global.cpp]()
+[23_Global.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/23_Global.cpp)
 
 ```C++
     // C03:23_Global.cpp
@@ -974,7 +974,7 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
 
 静态变量（static）初始化只在函数第一次调用时执行，函数调用之间变益的值保持不变。static变址的优点是**在函数范围之外它是不可用的**。
 > 代码示例：
-[24_Static.cpp]()
+[24_Static.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/24_Static.cpp)
 
 ```C++
     // C03:24_Static.cpp
@@ -1001,7 +1001,7 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
 
 `static`的第二层意思是：“在某个作用域外不可访问”。当应用`static`于函数名和所有函数外部的变量时， 它的意思是“在文件的外部不可以使用这个名字”。函数名或变量是局部于文件的；我们说它具有**文件作用域(file scope)**。
 > 代码示例：
-[25_FileStatic.cpp]()
+[25_FileStatic.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/25_FileStatic.cpp)
 
 ```C++
     // C03:25_FileStatic.cpp
@@ -1032,3 +1032,113 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
 
 ### 3.6.4 外部变量
 
+`extern`关键字，告诉编译器存在着一个变量和函数， 即使编译器在当前编译的文件中没有看到它，但这个变量或函数可能在另一个文件中或者在当前文件的后面定义。
+> 代码示例：
+[26_Forward.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/26_Forward.cpp)
+
+```C++
+    // C03: 26_Forward.cpp
+    // Forward function & data declarations
+
+    #include <iostream>
+    using namespace std;
+
+    // This is not actually external, but the compiler must be told it exists somewhere
+    extern int i;
+    extern void func();
+
+    int main()
+    {
+        i = 0;
+        func();
+    }
+
+    int i;  // The data Definition
+    void func()
+    {
+        i++;
+        cout << i;
+    }
+```
+
+当编译器遇到`extern int i`时， 它知道`i`肯定作为全局变量存在于某处。当编译器看到变量`i`的定义时，并没有看到别的声明；所以知道它在文件的前面已经找到了同样声明的`i`。如果已经把变量`i`定义为`static`,又要告诉编译器，`i`是全局定义的(通过`extern`)，但是，它也有文件作用域(通过`static`)，所以编译器会产生错误。
+
+#### 3.6.4.1 连接
+
+在一个执行程序中，标识符代表存放变量或被编译过的函数体的存储空间。**连接(linkage)**用连接器所见的方式描述存储空间。连接方式有两种：**内部连接( internal linkage)**和**外部连接(external linkage)**。
+
+内部连接意味着只对正被编译的文件创建存储空间。用内部连接，别的文件可以使用相同的标识符或全局变量，连接器不会发现冲突——也就是为每一个标识符创建单独的存储空间。在C和C++中，内部连接是由关键字`static`指定的。
+
+外部连接意味着为所有被编译过的文件创建一片单独的存储空间。一且创建存储空间，连接器必须解决所有对这片存储空间的引用。全局变量和函数名有外部连接。通过用关键字
+`extern`声明， 可以从其他文件访问这些变量和函数。
+
+### 3.6.5 常量
+
+修饰符`const`告诉编译器这个名字表示常量。在C++中，一个`const`必须有初始值。常量值前带0被认为是八进制数(基数为8)。常量值前带0x被认为是十六进制数（基数为16)。对于浮点数，我们可以对数加后缀强加浮点数类型：f或F强加`float`型，L或l强加`long double`型，否则是`double`型。
+
+字符常址是用**单引号**括起来的字符，如`'A'`、`'0'`。注意字符`'0'`(ASCII 96)和数值0之间存在巨大差别。
+
+### 3.6.6 volatile常量
+
+限定词`const`告诉编译器“这是不会改变的”（这就允许编译器执行额外的优化）；而限定
+词`volatile`则告诉编译器“不知道何时会改变”，防止编译器依据变量的稳定性作任何优化。
+
+## 3.7 运算符及其使用
+
+除了赋值、自增、自减运算符之外，运算符所产生的值不会修改操作数。修改操作数被称为**副作用(side effect)**。
+
+### 3.7.1 赋值
+
+赋值操作由运算符`=`实现。这意味着“取右边的值[通常称之为右值(rvalue)]井把它拷贝给左边[通常称之为左值([value)]”。右值可以是任意常量、变量或能产生值的表达式，但是左值必须是一个明确命名的变量（也就是说，应该有一个存储数据的物理空间）。例如，可以给一个变量赋值常量`A = 4;`，但是不能给常量赋任何值，因为它不能是左值。
+
+### 3.7.2 数学运算符
+
+加(+)、减(-)、乘(*)、除(/)、取模(%)。
+> 代码示例：
+[27_Mathops.cpp]()
+
+```C++
+    // C03: Mathops.cpp
+    // Mathematical operators
+    #include <iostream>
+    using namespace std;
+
+    // A macro to display a string and a value.
+    #define PRINT(STR, VAR) cout << STR << " = " << VAR << endl
+
+    int main()
+    {
+        int i, j, k;
+        float u, v, w;  // Applies to doubles, too
+        cout << "Enter an integer: ";
+        cin >> j;
+        cout << "Enter another integer: ";
+        cin >> k;
+        PRINT("j", j); PRINT("k", k);
+        i = j + k; PRINT("j + k", i);
+        i = j - k; PRINT("j - k", i);
+        i = j / k; PRINT("j / k", i);
+        i = j * k; PRINT("j * k", i);
+        i = k % j; PRINT("k % j", i);
+
+        // The following only works with integers
+        j %= k; PRINT("j %= k", j);
+
+        cout << "Enter a floating-point number: ";
+        cin >> v;
+        cout << "Enter another floating-point number: ";
+        cin >> w;
+        PRINT("v", v); PRINT("w", w);
+        u = v + w; PRINT("v + w", u);
+        u = v - w; PRINT("v - w", u);
+        u = v * w; PRINT("v * w", u);
+        u = v / w; PRINT("v / w", u);
+
+        // The following works for ints, chars and doubles too:
+        PRINT("u", u); PRINT("v", v);
+        u += v; PRINT("u += v", u);
+        u -= v; PRINT("u -= v", u);
+        u *= v; PRINT("u *= v", u);
+        u /= v; PRINT("u /= v", u);
+    }
+```
