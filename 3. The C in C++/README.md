@@ -1095,7 +1095,7 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
 
 加(+)、减(-)、乘(*)、除(/)、取模(%)。
 > 代码示例：
-[27_Mathops.cpp]()
+[27_Mathops.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/27_Mathops.cpp)
 
 ```C++
     // C03: Mathops.cpp
@@ -1140,5 +1140,46 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
         u -= v; PRINT("u -= v", u);
         u *= v; PRINT("u *= v", u);
         u /= v; PRINT("u /= v", u);
+    }
+```
+
+#### 3.7.2.1 预处理宏介绍
+
+使用宏`PRINT()`可以节省输入(和避免输入错误！)。传统上用**大写字母**来命名预处理宏以便突出它。跟在宏名后面的括号中的参数会被闭括号后面的所有代码替代。只要在调用宏的地方，预处理程序就删除名字`PRINT`并替换代码，所以使用宏名时编译器不会报告任何错误信息，**它并不对参数做任何类型检查**。
+
+### 3.7.3 关系运算符
+
+关系运算符在操作数之间建立一种关系。如果关系为真，则产生bool值`true`；如果关系为假，则产生bool值`false`。关系运算符有：小于(`<`)，大于(`>`)，小于等于(`<=`)，大于等于(`>=`)，恒等于(`==`)，不等于(`!=`)。
+
+### 3.7.4 逻辑运算符
+
+逻辑运算符“与”(`&&`）和“或”(`||`)依据它们的参数的逻辑关系产生`true`或`false`。在C++中，如果语句是非零值，则为`true`，如果是零值则为`false`。
+> 代码示例：
+[28_Boolean.cpp]()
+
+```C++
+    // C03:28_Boolean.cpp
+    // Relationship and operators
+
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        int i, j;
+        cout << "Enter an integer: ";
+        cin >> i;
+        cout << "Enter another integer: ";
+        cin >> j;
+        cout << "i > j is " << (i > j) << endl;
+        cout << "i < j is " << (i < j) << endl;
+        cout << "i >= j is " << (i >= j) << endl;
+        cout << "i <= j is " << (i <= j) << endl;
+        cout << "i == j is " << (i == j) << endl;
+        cout << "i != j is " << (i != j) << endl;
+        cout << "i && j is " << (i && j) << endl;
+        cout << "i || j is " << (i || j) << endl;
+        cout << "(i < 10) && (j < 10) is " << ((i < 10) && (j < 10)) << endl;
+        return 0;
     }
 ```
