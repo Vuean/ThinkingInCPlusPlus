@@ -1155,7 +1155,7 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
 
 逻辑运算符“与”(`&&`）和“或”(`||`)依据它们的参数的逻辑关系产生`true`或`false`。在C++中，如果语句是非零值，则为`true`，如果是零值则为`false`。
 > 代码示例：
-[28_Boolean.cpp]()
+[28_Boolean.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/28_Boolean.cpp)
 
 ```C++
     // C03:28_Boolean.cpp
@@ -1183,3 +1183,82 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
         return 0;
     }
 ```
+
+### 3.7.5 位运算符
+
+位运算符允许在一个数中处理个别的位（因为浮点数使用一种特殊的内部格式，所以位运算符只适用于整型char、int和long）。
+
+如果两个输入位都是1, 则 “与” 运算符(`&`)在结果位上产生1, 否则为0。如果两个输入位有一个是1, 则 “或” 运算符(`|`)在结果位上产生1，只有当两个输入位都是0时，结果
+位才为0。如果两个输入位之一是1而不是同时为1，则位的 “异或” 运算符xor(`^`)的结果位为1。位的 “非” 运算符(`~`)，也称为补运算是一个一元运算符，它只带一个参数（其他的运算符是二元运算符）。非运算符运算的结果和输入位相反，即输入位为0时结果位为1，输入位为1时结果位为0。
+
+### 3.7.6 移位运算符
+
+移位运算符也是对位的操纵。左移位运算符(`<<`)引起运算符左边的操作数向左移动，移动位数由运算符后面的操作数指定。右移位运算符(`>>`)引起运算符左边的操作数向右移动，移动位数由运算符后面的操作数指定。如果移位运算符后面的值比运算符左边的操作数的位数大，则结果是不定的。如果左边的操作数是无符号的，右移是逻辑移，所以最高位补零。如果左边的操作数是有符号的，右移可能是也可能不是逻辑移位（也就是说，行为是不定的）。
+> 代码示例：
+[29_BitWise.cpp]()
+
+```C++
+    // C03: 29_printBinary.h
+    // Display a byte in binary
+
+    void printBinary(const unsigned char val);
+
+    // C03: 29_printBinary.cpp
+    #include <iostream>
+    #include "29_printBinary.h"
+
+    void printBinary(const unsigned char val)
+    {
+        for(int i = 7; i >= 0; i--)
+        {
+            if(val & (1 << 7))
+                std::cout << "1";
+            else
+                std::cout << "0";
+        }
+    }
+
+
+```
+
+函数`printBinary()`取出一个字节井一位一位地显示出来。表达式`(1 << i)`在每一个相继位的位置产生一个l。如果这一位和变量val按位“与”，并且结果不是零，就表明val的这一位为1。
+
+`<<` 和 `>>` 实现位的移位功能，但是当移位越出数的一端时，那些位就会丢失（这就是通常所说的，那些位掉进了神秘的位桶(bit bucket)中，丢弃在这个桶中的位有可能需要重用）。操作位的时候，也可以执行旋转(rotation)，即在一端移掉的位插入到另一端，好像它们在绕着一个回路旋转。
+
+> 代码示例：
+[30_Rotation.cpp]()
+
+```C++
+    // C03:30_Rotation.cpp
+    // Perform left and right rotations
+
+    unsigned char rol(unsigned char val)
+    {
+        int highbit;
+        if(val & 0x80)  // 0x80 is the high bit only
+            highbit = 1;
+        else
+            highbit = 0;
+        // left shift (bottom bit becomes 0):
+        val <<= 1;
+        // Rotate the high bit onto the bottom
+        val != highbit;
+        return val;
+    }
+
+    unsigned char ror(unsigned char val)
+    {
+        int lowbit;
+        if(val & 1) // Check the low bit
+            lowbit = 1;
+        else
+            lowbit = 0;
+        val >> 1;   // Right shift by one position
+        // Rotate the low bit onto the top:
+        val |= (lowbit << 7);
+        return val;
+    }
+```
+
+### 3.7.7 一元运算符
+
