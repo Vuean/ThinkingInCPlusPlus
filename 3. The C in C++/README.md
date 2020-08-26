@@ -1272,7 +1272,7 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
 
 逗号并不只是在定义多个变量时用来分隔变最， 如像`int i, j , k;`当然， 它也用于函数参数列表中。同时，它也可用于分隔表达式。在这种情况下，它只产生最后一个表达式的值。在逗号分隔的列表种，其余的表达式只完成它们的副作用。下面例子自增一串变量，并把最后一个作为右值。
 > 代码示例：
-[31_CommaOperator.cpp]()
+[31_CommaOperator.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/31_CommaOperator.cpp)
 
 ```C++
     // C03:31_CommaOperator.cpp
@@ -1299,4 +1299,104 @@ C和C++中专门存放地址的变量类型叫做**指针(pointer)**。定义指
 通常， 除了作为一个分隔符， 逗号最好不作他用。
 
 ### 3.7.10 使用运算符时的常见问题
+
+使用运算符时的一个问题是总不愿使用括号，另外一个十分常见的问题如下所示：
+
+```C++
+    // C03: Pitfall.cpp
+    // Operator mistakes
+    int main()
+    {
+        int a = 1, b = 1;
+        while(a = b)
+        // ...
+    }
+```
+
+当b不为零时，语句`a = b`总是为真，而b的值也是由运算符“=”产生的，在条件语句中，应当使用等值运算符“==”。同样的，使用位运算符中的“与”和“或”，而不是它们响应的逻辑运算符。
+
+### 3.7.11 转换运算符
+
+**转换(cast)**，它会自动把一种数据类型转换为另一种类型。为了实现转换，要用括号把所想要转换的数据类型（包括所有的修饰符）括起来放在值的左边。这个值可以是一个变量、一个常量、由一个表达式产生的值或是一个函数的返回值。下面是一个例子：
+
+```C++
+    // C03: SimpleCast.cpp
+    int main()
+    {
+        int b = 200;
+        unsigned long a = (unsigned long int ) b;
+    }
+```
+
+C+＋有一个另外的转换语法，它遵从函数调用的语法。这个语法给参数加上括号而不是给数据类型加上括号，类似千函数调用：
+
+```C++
+    // C03: FunctionCallCast.cpp
+    int main()
+    {
+        float a = float(200);
+        // This is equivalent to:
+        float b = (float) 200;
+    }
+```
+
+当然对于上面的情况，我们实际上不需要转换，只要写200f（实际上，一般编译器会对上面的表达式作转换）。转换一般用于变量，而不用于常量。
+
+### 3.7.12 C++的显示转换
+
+|    转换类型    |描述         |
+|    :-------:   |:-------            |
+| static_cast |用于“良性”和“适度良性”转换，包括不用强制转换（例如自动类型转换）|
+|      const_cast      |对“const”和/或“volatile”进行转换|
+|   reinterpret_cast  |转换位完全不同的意思。为了安全使用它，关键必须转回原来的类型。转换成的类型一般只能用于位操作，否则就是为了其他隐秘的目的。这是所有转换中最危险的。|
+|      dynamic_cast     |用于类型安全的向下转换|
+
+#### 3.7.12.1 静态转换（static_cast）
+
+`static_cast`全部用于明确定义的变换，包括编译器允许我们所做的不用强制转换的“安全”变换和不太安全但清楚定义的变换。`static_cast`包含的转换类型包括典型的非强制变换、窄化（有信息丢失）变换，使用`void*`的强制变换、隐式类型变换和类层次的静态定位。
+> 代码示例：
+[32_static_cast.cpp]()
+
+```C++
+    // C03: 32_static_cast.cpp
+    void func(int) {}
+
+    int main()
+    {
+        int i = 0x7fff; // Max pos value = 32767
+        long l;
+        float f;
+        // (1) Typical castless conversions:
+        l = i;
+        f = i;
+        // Also works:
+        l = static_cast<long>(i);
+        f = static_cast<float>(i);
+
+        // (2) Narrowing conversions:收缩转换
+        i = l;  // May lose digits
+        i = f;  // May lose info
+        // Says "I know," eliminates warnings:
+        i = static_cast<int>(l);
+        i = static_cast<int>(f);
+        char c = static_cast<char>(i);
+
+        // (3) Forcing a conversion from void* :
+        void* vp = &i;
+        // Old way products a dangerous conversion:
+        float* fp = (float*)vp;
+        // The new way is equally dangerous:
+        fp = static_cast<float*>(vp);
+
+        // (4) Implicit type conversion, normally performed by the compiler:
+        double d = 0.0;
+        int x = d;  // Automatic type conversion
+        x = static_cast<int>(d);    // More explicit
+        func(d);    // Automatic type conversion
+        func(static_cast<int>(d)); // More explicit
+    }
+```
+
+程序的第(1)部分，是C中习惯采用的几种变换，有的有强制转换，有的没有强制转换。
+把`int`提升到`long`或`float`不会有间题， 因为后者总是能容纳一个int所包含的值。尽管这是不必要的，但是可以使用`static_cast`来突出这些提升。
 
