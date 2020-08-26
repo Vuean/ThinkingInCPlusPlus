@@ -1355,7 +1355,7 @@ C+＋有一个另外的转换语法，它遵从函数调用的语法。这个语
 
 `static_cast`全部用于明确定义的变换，包括编译器允许我们所做的不用强制转换的“安全”变换和不太安全但清楚定义的变换。`static_cast`包含的转换类型包括典型的非强制变换、窄化（有信息丢失）变换，使用`void*`的强制变换、隐式类型变换和类层次的静态定位。
 > 代码示例：
-[32_static_cast.cpp]()
+[32_static_cast.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/32_static_cast.cpp)
 
 ```C++
     // C03: 32_static_cast.cpp
@@ -1399,4 +1399,126 @@ C+＋有一个另外的转换语法，它遵从函数调用的语法。这个语
 
 程序的第(1)部分，是C中习惯采用的几种变换，有的有强制转换，有的没有强制转换。
 把`int`提升到`long`或`float`不会有间题， 因为后者总是能容纳一个int所包含的值。尽管这是不必要的，但是可以使用`static_cast`来突出这些提升。
+
+第(2)部分显示的是另一种变换方式。在这里可能会丢失数据，因为一个`int`和`long`或`float`不是一样“宽”的；它不能容纳同样大小的数字。因此称为**窄化变换(narrowing conversion)**。
+
+C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
+
+程序的第(4)部分显示编译器自动执行的几种隐式类型变换。
+
+#### 3.7.12.2 常量转换（const_cast）
+
+如果从`const`转换为非`const`或从`volatile`转换为非`volatile`，可以使用`const_cast`。这是`const_cast`惟一允许的转换；如果进行别的转换就可能要使用单独的表达式或者可能会得到一个编译错误。
+
+```C++
+    // C03: const_cast.cpp
+    int main()
+    {
+        const int i = 0;
+        int* j = (int*) &i; // Deprecated form
+        j = const_cast<int*>(&i);   // Preferred
+        // Can't do simultaneous additional casting:
+        // ! long* l = const_cast(long*)(&i); //Error
+        volatile int k = 0;
+        int *u = const_cast<int*>(&k);
+    }
+```
+
+如果取得了`const`对象的地址，就可以生成一个指向`const`的指针，不用转换是不能将它赋给非`const`指针的。旧形式的转换能实现这样的赋值，但是`const_cast`是适用的。`volatile`也是这样。
+
+#### 3.7.12.3 重解释转换（reinterpret_cast）
+
+这是最不安全的一种转换机制，最有可能出问题。`reinterpret_cast`把对象假想为模式（为了某种隐秘的目的），仿佛它是一个完全不同类型的对象。在使用`reinterpret_cast`做任何事之前，实际上总是需要`reinterpret_cast`回到原来的
+类型（或者把变批看做是它原来的类型）。
+> 代码示例：
+[33_reinterpret_cast.cpp]()
+
+```C++
+    // C03:33_reinterpret_cast.cpp
+    #include <iostream>
+    using namespace std;
+    const int sz = 100;
+
+    struct X {int a[sz]; };
+
+    void print(X* x)
+    {
+        for(int i = 0; i < sz; ++i)
+            cout << x->a[i] << ' ';
+        cout << endl << "--------------------" << endl;
+    }
+
+    int main()
+    {
+        X x;
+        print(&x);
+        int *xp = reinterpret_cast<int*>(&x);
+        for(int* i = xp; i < xp + sz; ++i)
+            *i = 0;
+        // Can't use xp as an X* at this point unless you cast it_back:
+        print(reinterpret_cast<X*>(xp));
+        // In this example, you can also just use the original identifier:
+        print(&x);
+    }
+```
+
+`struct X`只包含一个整型数组，但是当用`X x`在堆栈中创建一个变量时，该结构体中的每一个整型变量的值都没有意义(上述程序中的第一个print()函数输出可见)。为了初始化它们，取得`X`的地址并转换为一个整型指针，该指针然后遍历这个数组置每一个整型元素为0。注意i的上限是如何通过计算sz加xp得到的。编译器知道我们实际上是希望sz的指针位置比xp更大，它替我们做了正确的指针算术运算。
+
+`reinterpret_cast`的思想就是当需要使用的时候，所得到的东西已经不同了，以至于它不能用于类型的原来目的，除非再次把它转换回来。这里，我们在打印调用中转换回`X*`，但是当然，因为我们还有原来的标识符，所以还可以使用它。但是`xp`只有作为`int *`才有用，这真的是对原来的`X`的重新解释。
+
+使用`reinterpret_cast`通常是一种不明智、不方便的编程方式， 但是当必须使用它时， 它是非常有用的。
+
+### 3.7.13 sizeof——独立运算符
+
+`sizeof`可计算有关数据项目所分配的内存大小。
+> 代码示例：
+[34_sizeof.cpp]()
+
+```C++
+    // C03:34_sizeof.cpp
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        cout << "sizeof(double) = " << sizeof(double);
+        cout << ", sizeof(char) = " << sizeof(char);
+        return 0;
+    }
+```
+
+按照定义，任何`char`(`signed`、`unsigned`或普通的）类型的`sizeof`都是1，不管`char`潜在的存储空间是否实际上是一个字节。
+
+注意`sizeof`是一个运算符， 不是函数。如果把它应用于一个类型，必须要像上面所示的那样使用括号，**但是如果对一个变量使用它，可以不要括号**。
+
+```C++
+    int main() {
+        int x;
+        int i = sizeof x;
+    }
+```
+
+### 3.7.14 asm关键字
+
+这是一种**转义(escape)机制**，允许在C++程序中写汇编代码。在汇编程序代码中经常可以引用C++的变最，这意味着可以方便地和C++代码通信，且限定汇编代码只是用于必要的高效调整，或使用特殊的处理器指令。编写汇编语言时所必须使用的严格语法是依赖于编译器的，在编译器的文档中可以发现有关语法。
+
+### 3.7.15 显示运算符
+
+这是用于位运算符和逻辑运算符的关键字。
+
+|    关键字    |含义         |
+|    :-------:   |:-------            |
+| and | `&&`（逻辑与）|
+|      or      | `||` （逻辑或）|
+|   not  | `!`（逻辑非）|
+|      not_eq     | `!=`（逻辑不等）|
+|      bitand     | `&`（位与）|
+|      and_eq     | `&=`（位与赋值）|
+|      bitor     | `|` （位或）|
+|      or_eq     | `|=` （位或赋值）|
+|      xor     | `^`（位异或）|
+|      xor_eq     | `^=`（位异或赋值）|
+|      compl     | `~`（补）|
+
+## 3.8 创建复合类型
 
