@@ -1545,7 +1545,7 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 
 `struct`（结构）是把一组变最组合成一个构造的一种方式。一且创建了一个`struct`, 就可以生成所建立的新类型变量的许多实例。
 > 代码示例：
-[35_SimpleStruct.cpp]()
+[35_SimpleStruct.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/35_SimpleStruct.cpp)
 
 ```C++
     // C03:35_SimpleStruct.cpp
@@ -1576,7 +1576,7 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 
 如果有一个指向`struct`对象的指针，可以使用一个不同的运算符`->`来选择对象中的元素。
 > 代码示例：
-[36_SimpleStruct1.cpp]()
+[36_SimpleStruct1.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/36_SimpleStruct1.cpp)
 
 ```C++
     // C03: 36_SimpleStruct1.cpp
@@ -1607,4 +1607,105 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 在`main()`中， `struct`指针`sp`最初指向`s1`, 用`->`选择`s1`中的成员来初始化它们。随后`sp`指向`s2`, 以同样的方式初始化那些变量。
 
 ### 3.8.3 用enum提高程序清晰度
+
+枚举数据类型是把名字和数字相联系的一种方式。
+
+```C++
+    // C03: Enum.cpp
+    // Keeping track of shapes
+
+    enum ShapeType{
+        circle,
+        square,
+        rectangle
+    };  // Must end with a semicolon like a struct
+
+    int main()
+    {
+        ShapeType shape = circle;
+        // Activities here...
+        // Now do something based on what the shape is:
+        switch(shape){
+            case circle: /* circle stuff*/ break;
+            case square: /* square stuff*/ break;
+            case rectangle : /* rectangle stuff*/ break;
+        }
+    }
+```
+
+`shape`是被列举的数据类型`ShapeType`的变裁，可以把它的值和列举的值相比较。因为`shape`实际上只是`int`, 所以它可以具有任何一个`int`拥有的值（包括负数）。也可以把`int`变量和枚举值比较。
+
+#### 3.8.3.1 枚举类型检查
+
+在C++中，类型的概念是基础，对于枚举也是如此。如果有一个`color`枚举类型的实例`a`,在C中，可以写`a++`，但在C++中不能这样写。这是因为枚举的增量运算执行两种类型转换， 其中一个在C++中是合法的，另一个是不合法的。首先，枚举的值隐式地从`color`强制转换为`int`，然后递增该值，再把`int`强制转换回`color`类型。在C++中，这是不允许的，因为color是一个独特的类型， 井不等价于一个`int`。
+
+### 3.8.4 用union节省内存
+
+有时一个程序会使用同一个变量处理不同的数据类型。这时可以创建一个`struct`，其中包含需要存储的所有可能的不同类型，或者可以使用**union（联合）**。
+
+`union`把所有的数据放进一个单独的空间内，它计算出放在`union`中的**最大项**所必需的空间数，并生成`union`的大小。使用`union`可以节省内存。
+
+每当在`union`中放置一个值，这个值总是放在`union`开始的同一个地方，但是只使用必需的空间。因此，我们创建的是一个能容纳任何一个`union`变量的“超变量”。所有的`union`变量地址都是一样的（在类或`struct`中，地址是不同的）。
+
+下面是一个使用`union`的例子。试着去掉不同的元素，看看对`union`的大小有什么影响。注意在`union`中声明某个数据类型的多个实例是没有意义的（除非就是要用不同的名字）。
+> 代码示例：
+[37_Union.cpp]()
+
+```C++
+    // C03:37_Union.cpp
+    // The size and simple use of a union
+    #include <iostream>
+    using namespace std;
+
+    union Packed{   // Declaration similar to a class
+        char i;
+        short j;
+        int k;
+        long l;
+        float f;
+        double d;
+        // The union will be the size of double, 
+        // since that's the largest element
+        // Selection ends a union, like a struct
+    };
+
+    int main()
+    {
+        cout << "sizeof(Packed) = " << sizeof(Packed) << endl;
+        Packed x;
+        x.i = 'c';
+        cout << x.i << endl;
+        x.d = 3.1415926;
+        cout << x.d << endl;
+
+        // 一且进行赋值， 编译器并不关心用联合做什么。
+        // 在上面的例子中， 可以对x赋一个浮点值：
+        x.f = 2.222;
+        // 然后把它作为一个int输出。
+        cout << x.j;    // (输出13631)
+        cout << x.i;    // (输出?)
+        // 结果是无用的信息。
+    }
+```
+
+### 3.8.5 数组
+
+数组是一种复合类型，因为它们允许在一个单一的标识符下把变量结合在一起，一个接着一个。
+> 代码示例：
+[38_Arrays.cpp]()
+
+```C++
+    // C03: 38_Arrays.cpp
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        int a[10];
+        for(int i = 0; i < 10; ++i){
+            a[i] = i * 10;
+            cout << "a[" << i << "] = " << a[i] << endl;
+        }
+    }
+```
 
