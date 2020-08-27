@@ -1431,7 +1431,7 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 这是最不安全的一种转换机制，最有可能出问题。`reinterpret_cast`把对象假想为模式（为了某种隐秘的目的），仿佛它是一个完全不同类型的对象。在使用`reinterpret_cast`做任何事之前，实际上总是需要`reinterpret_cast`回到原来的
 类型（或者把变批看做是它原来的类型）。
 > 代码示例：
-[33_reinterpret_cast.cpp]()
+[33_reinterpret_cast.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/33_reinterpret_cast.cpp)
 
 ```C++
     // C03:33_reinterpret_cast.cpp
@@ -1472,7 +1472,7 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 
 `sizeof`可计算有关数据项目所分配的内存大小。
 > 代码示例：
-[34_sizeof.cpp]()
+[34_sizeof.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/34_sizeof.cpp)
 
 ```C++
     // C03:34_sizeof.cpp
@@ -1521,4 +1521,90 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 |      compl     | `~`（补）|
 
 ## 3.8 创建复合类型
+
+### 3.8.1 用typedef命名别名
+
+`typedef`的语法是： `typedef 原类型名 别名`。当数据类型稍微有点复杂时， 人们经常使用typedef只是为了少敲几个键：`typedef unsigned long ulong`。现在如果写`ulong`, 则编译器知道意思是`unsigned long`。
+
+但是在一些重要的场合， 编译器必须知道我们正在将名字当做类型处理， 所以`typedef`起了关键作用。`typedef`经常会派上用场的地方是指针类型。如：
+
+```C++
+    int* x, y;
+```
+
+这实际上生成一个`int*x`和一个`int y`（不是一个`int*`）。也就是说，`*`绑定右边，而不是左边。但是，如果使用一个`typedef`:
+
+```C++
+    typedef int* IntPtr;
+    IntPtr x, t;
+```
+
+则`x`和`y`都是`int*`类型。
+
+### 3.8.2 用struct把变量结合在一起
+
+`struct`（结构）是把一组变最组合成一个构造的一种方式。一且创建了一个`struct`, 就可以生成所建立的新类型变量的许多实例。
+> 代码示例：
+[35_SimpleStruct.cpp]()
+
+```C++
+    // C03:35_SimpleStruct.cpp
+    struct Structurel{
+        char c;
+        int i;
+        float f;
+        double d;
+    };
+
+    int main()
+    {
+        struct Structurel s1, s2;
+        s1.c = 'a'; // Select an element using a '.'
+        s1.i = 1;
+        s1.f = 3.14;
+        s1.d = 0.00093;
+        s2.c = 'a';
+        s2.i = 1;
+        s2.f = 3.14;
+        s2.d = 0.00093;
+    }
+```
+
+`struct`的声明必须以**分号**结束。在`main()`中，创建了两个`Structurel`的实例：`s1`和`s2`。它们每一个都有各自独立的c、i、f和d变量。`s1`和`s2`表示了完全独立的变量块。
+
+#### 3.8.2.1 指针和struct
+
+如果有一个指向`struct`对象的指针，可以使用一个不同的运算符`->`来选择对象中的元素。
+> 代码示例：
+[36_SimpleStruct1.cpp]()
+
+```C++
+    // C03: 36_SimpleStruct1.cpp
+    // Using pointers to structs
+    typedef struct Structre3{
+        char c;
+        int i;
+        float f;
+        double d;
+    } Structre3;
+
+    int main()
+    {
+        Structre3 s1, s2;
+        Structre3* sp = &s1;
+        sp->c = 'a'; // Select an element using a '.'
+        sp->i = 1;
+        sp->f = 3.14;
+        sp->d = 0.00093;
+        sp = &s2;      // Point to a different struct object
+        sp->c = 'a';
+        sp->i = 1;
+        sp->f = 3.14;
+        sp->d = 0.00093;
+    }
+```
+
+在`main()`中， `struct`指针`sp`最初指向`s1`, 用`->`选择`s1`中的成员来初始化它们。随后`sp`指向`s2`, 以同样的方式初始化那些变量。
+
+### 3.8.3 用enum提高程序清晰度
 
