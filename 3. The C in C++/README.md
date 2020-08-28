@@ -1649,7 +1649,7 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 
 下面是一个使用`union`的例子。试着去掉不同的元素，看看对`union`的大小有什么影响。注意在`union`中声明某个数据类型的多个实例是没有意义的（除非就是要用不同的名字）。
 > 代码示例：
-[37_Union.cpp]()
+[37_Union.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/37_Union.cpp)
 
 ```C++
     // C03:37_Union.cpp
@@ -1692,7 +1692,7 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 
 数组是一种复合类型，因为它们允许在一个单一的标识符下把变量结合在一起，一个接着一个。
 > 代码示例：
-[38_Arrays.cpp]()
+[38_Arrays.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/38_Arrays.cpp)
 
 ```C++
     // C03: 38_Arrays.cpp
@@ -1708,4 +1708,54 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
         }
     }
 ```
+
+访问数组速度很快，但需要注意下标不能越界。同时，数组另一个缺陷在于，必须在编译期定义数组的大小。
+
+可以生成任何类型的数组， 甚至是`struct`类型的：
+> 代码示例：
+[39_StructArray.cpp]()
+
+```C++
+    // C03: 39_StructArray.cpp
+    // An array of struct
+
+    typedef struct {
+        int i, j, k;
+    }ThreeDPoint;
+
+    int main()
+    {
+        ThreeDPoint p[10];
+        for(int i = 0; i < 10; i++)
+        {
+            p[i].i = i + 1;
+            p[i].j = i + 2;
+            p[i].k = i + 3;
+        }
+    }
+```
+
+注意：`struct`中的标识符`i`如何与`for`循环中的`i`无关。
+
+为了知道数组中的相邻元素之间的距离，可以打印出地址如下：
+> 代码示例：
+[40_ArrayAddresses.cpp]()
+
+```C++
+    // C03: 40_ArrayAddresses.cpp
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        int a[10];
+        cout << "sizeof(int) = " << sizeof(int) << endl;
+        for(int i = 0; i < 10; ++i)
+        {
+            cout << "&a[" << i << "] = " << &a[i] << endl;
+        }
+    }
+```
+
+#### 3.8.5.1 指针和数组
 
