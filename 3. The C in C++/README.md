@@ -1664,7 +1664,7 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
         long l;
         float f;
         double d;
-        // The union will be the size of double, 
+        // The union will be the size of double,
         // since that's the largest element
         // Selection ends a union, like a struct
     };
@@ -1713,7 +1713,7 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 
 可以生成任何类型的数组， 甚至是`struct`类型的：
 > 代码示例：
-[39_StructArray.cpp]()
+[39_StructArray.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/39_StructArray.cpp)
 
 ```C++
     // C03: 39_StructArray.cpp
@@ -1739,7 +1739,7 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 
 为了知道数组中的相邻元素之间的距离，可以打印出地址如下：
 > 代码示例：
-[40_ArrayAddresses.cpp]()
+[40_ArrayAddresses.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/40_ArrayAddresses.cpp)
 
 ```C++
     // C03: 40_ArrayAddresses.cpp
@@ -1758,4 +1758,91 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 ```
 
 #### 3.8.5.1 指针和数组
+
+数组的标识符不像一般变最的标识符。一方面，数组标识符不是左值，不能给它赋值。
+它只是一个进入方括号语法的手段，**当给出数组名而没有方括号时，得到的就是数组的起始地址**：
+> 代码示例：
+[41_ArrayIdentifier.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/41_ArrayIdentifier.cpp)
+
+```C++
+    // C03:41_ArrayIdentifier.cpp
+    #include <iostream>
+    using namespace std;
+
+    int main()
+    {
+        int a[10];
+        cout << "a = " << a << endl;
+        cout << "&a[0] = " << &a[0] << endl;
+    }
+```
+
+上述运行结果相同(以十六进制形式显示)。
+
+因此可以**把数组标识符看作是数组起始处的只读指针**。尽管不能改变数组标识符指向，但是可以另创建指针，使它在数组中移动。事实上，方括号语法和指针一样工作：
+
+```C++
+    int main()
+    {
+        int a[10];
+        int* ip = a;
+        for(int i = 0; i < 10; i++)
+            ip[i] = i * 10;
+    }
+```
+
+当想给一个函数传递数组时，命名数组以产生它的起始地址的事实相当重要。如果声明
+一个数组为函数参数，实际上真正声明的是一个指针。所以在下面的例子中，`funcl()`和`func2()`有一样的参数表：
+> 代码示例：
+[42_ArrayArguments.cpp]()
+
+```C++
+    // C03: ArrayArguments.cpp
+    # include <iostream>
+    #include <string>
+    using namespace std;
+
+    void func1(int a[], int size)
+    {
+        for(int i = 0; i < size; ++i)
+        {
+            a[i] = i * i - i;
+        }
+    }
+
+    void func2(int* a, int size)
+    {
+        for(int i = 0; i < size; ++i)
+        {
+            a[i] = i * i + i;
+        }
+    }
+
+    void print(int a[], string name, int size)
+    {
+        for(int i = 0; i < size; ++i)
+        {
+            cout << name << "[" << i << "] = " << a[i] << endl;
+        }
+    }
+
+    int main()
+    {
+        int a[5], b[5];
+        // Probably garbage values:
+        print(a, "a", 5);
+        print(b, "b", 5);
+        // Initialize the arrays:
+        func1(a, 5);
+        func1(b, 5);
+        print(a, "a", 5);
+        print(b, "b", 5);
+        // Notice the arrays are always nodified:
+        func2(a, 5);
+        func2(b, 5);
+        print(a, "a", 5);
+        print(b, "b", 5);
+    }
+```
+
 
