@@ -1794,7 +1794,7 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 当想给一个函数传递数组时，命名数组以产生它的起始地址的事实相当重要。如果声明
 一个数组为函数参数，实际上真正声明的是一个指针。所以在下面的例子中，`funcl()`和`func2()`有一样的参数表：
 > 代码示例：
-[42_ArrayArguments.cpp]()
+[42_ArrayArguments.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/42_ArrayArguments.cpp)
 
 ```C++
     // C03: ArrayArguments.cpp
@@ -1845,4 +1845,156 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
     }
 ```
 
+尽管`func1()`和`func2()`以不同的方式声明它们的参数，但是在函数内部的用法是一样的。这说明：**数组不可以按值传递**， 也就是说， 不会自动地得到传递给函数的数组的本地拷贝。
 
+尽管把数组作为参数传递时，指针语法和方括号语法是一样的，但是方括号语法使得读者更清楚它的意思是把这个参数看做是－个数组。
+
+想给程序传递命令行参数时， C和C++的函数main()有特殊的参数表，其形式如像：
+
+```C++
+    int main(int argc, char* argv[]) { //...
+```
+
+**第一个参数的值是第二个参数的数组元素个数**。第二个参数总是`char*`数组，因为数组中的元素来自作为字符数组的命令行（记住，数组只能作为指针传递）。命令行中的每一个用空格分隔的字符串被转换成单独的数组参数。通过遍历数组，下面的程序可以打印出所有的命令行参数：
+
+```C++
+    // : C03: CommandLineArgs.cpp
+    #include <iostream>
+    using namespace std;
+
+    int main(int argc, char* argv[]){
+        cout << "argc = " << argc << endl;
+        for (int i = 0; i < argc; i++)
+            cout << "argv[" << i << "]: " << argv[i] << endl;
+    }
+```
+
+还有另一种声明argv的方式：
+
+```C++
+    int main(int argc, char** argv)
+```
+
+从命令行中获得的是字符数组；如果想把数组看成是别的某种类型，应该在程序里负责
+转换它。
+
+最简单的是分别使用`atoi()`、`atol()`和`atof()`把ASCII字符数组转换为int、long和double浮点值。
+
+```C++
+    // C03: ArgsToInts.cpp
+    // Converting command-line arguments to ints
+    #include <iostream>
+    #include <cstdlib>
+    using namespace std;
+
+    int main(int argc, char* argv[]){
+        for(int i = 0; i < argc; i++){
+            cout << atoi(argv[i]) << endl;
+        }
+    }
+```
+
+在这个程序中，可以在命令行中放置任意多个参数。读者会注意到for循环从值1开始，跳过了`argv[0]`中的程序名。
+
+#### 3.8.5.2 探究浮点格式
+
+在`float`和`double`里的数字位被分为段：指数、尾数和符号位，它用科学计数法来存储数值。
+
+#### 3.8.5.3 指针算术
+
+**指针算术(pointer arithfnetic)** 指的是对指针的某些算术运算符的应用。
+> 代码示例：
+[43_PointerIncrement.cpp]()
+
+```C++
+    // C03: 43_PointerIncrement.cpp
+    #include <iostream>
+    using namespace std;
+    int main()
+    {
+        int i[10];
+        double d[10];
+        int *ip = i;
+        double *dp = d;
+
+        cout << "ip = " << (long*)ip << endl;
+        ip++;
+        cout << "ip = " << (long*)ip << endl;
+
+        cout << "dp = " << (long*)dp << endl;
+        dp++;
+        cout << "dp = " << (long*)dp << endl;
+
+        return 0;
+    }
+```
+
+其中，对`int*`进行`++`操作，只改变了4个字节，而对`double*`改变了8个字节，这取决于`int`和`double`浮点数的大小。编译器计算出指针改变的正确值，使它指向数组中的下一个元素（指针算术只有在数组中才是有意义的）。
+> 代码示例：
+[44_PointerIncrement2.cpp]()
+
+```C++
+    // C03:44_PointerIncrement2.cpp
+    #include <iostream>
+    using namespace std;
+
+    typedef struct{
+        char c;
+        short s;
+        int i;
+        long l;
+        float f;
+        double d;
+        long double ld;
+    } Primitives;
+
+    int main()
+    {
+        Primitives p[10];
+        Primitives* pp = p;
+        cout << "sizeof(Primitives) = " << sizeof(Primitives) << endl;
+        cout << "pp = " << pp << endl;
+        pp++;
+        cout << "pp = " << pp << endl;
+    }
+```
+
+输出结果：
+
+```C++
+    sizeof(Primitives) = 48
+    pp = 0x61fc30
+    pp = 0x61fc60
+```
+
+## 3.9 调试技巧
+
+### 3.9.1 调试标记
+
+预处理器调试标记和运行期调试标记。
+
+#### 3.9.1.1 预处理器调试标记
+
+通过使用预处理器`#define`定义一个或更多的调试标记（在头文件中更适合），可以测试一个使用`#ifdef`语句和包含条件调试代码的标记。当认为调试完成了，只需使用`undef`标记，代码就会自动消失（这会减少可执行文件的大小和运行时间）。
+
+为了区分预处理器标记和变量，预处理器标记一般用大写字母书写。
+
+```C++
+    #define DEBUG // Probably in a header file
+    // ...
+    #ifdef DEBUG    // Check to see if flag is defined
+    /* debugging code here */
+    #endif  // DEBUG
+```
+
+大多数C和C++的程序实现还允许在编译器的命令行中使用`#define`和`#undef`标记。
+
+#### 3.9.1.2 运行期调试标记
+
+为了自动打开和关闭调试代码， 可以建立一个如下的bool标记：
+> 代码示例：
+[45_DynamicDebugFlags.cpp]()
+
+```C++
+
+```
