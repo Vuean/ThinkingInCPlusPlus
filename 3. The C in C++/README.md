@@ -1904,7 +1904,7 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 
 **指针算术(pointer arithfnetic)** 指的是对指针的某些算术运算符的应用。
 > 代码示例：
-[43_PointerIncrement.cpp]()
+[43_PointerIncrement.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/43_PointerIncrement.cpp)
 
 ```C++
     // C03: 43_PointerIncrement.cpp
@@ -1931,7 +1931,7 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 
 其中，对`int*`进行`++`操作，只改变了4个字节，而对`double*`改变了8个字节，这取决于`int`和`double`浮点数的大小。编译器计算出指针改变的正确值，使它指向数组中的下一个元素（指针算术只有在数组中才是有意义的）。
 > 代码示例：
-[44_PointerIncrement2.cpp]()
+[44_PointerIncrement2.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/44_PointerIncrement2.cpp)
 
 ```C++
     // C03:44_PointerIncrement2.cpp
@@ -1993,8 +1993,91 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 
 为了自动打开和关闭调试代码， 可以建立一个如下的bool标记：
 > 代码示例：
-[45_DynamicDebugFlags.cpp]()
+[45_DynamicDebugFlags.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/45_DynamicDebugFlags.cpp)
 
 ```C++
+    // C03:45_DynamicDebugFlags.cpp
+    #include <iostream>
+    #include <string>
+    using namespace std;
 
+    // Debug flags aren't necessaruly global:
+    bool debug = false;
+
+    int main(int argc, char* argv[])
+    {
+        for (int i = 1; i < argc; ++i)
+            if(string(argv[i]) == "--debug=on")
+                debug = true;
+        bool go = true;
+        while (go){
+            if (debug){
+                // Debugging code here
+                cout << "Debugger is now on!" << endl;
+            }
+            else{
+                cout << "Debugger is now off!" << endl;
+            }
+            cout << "Turn Debugger [on/off/quit]: ";
+            string reply;
+            cin >> reply;
+            if(reply == "on") debug = true; // Turn it on
+            if(reply == "off") debug = false; // Turn it off
+            if(reply == "quit") break; // Out of 'while'
+        }
+    }
+```
+
+### 3.9.2 把变量和表达式转换成字符串
+
+在一个预处理器宏中的参数前面使用一个#，预处理器会把这个参数转换为一个字符数组。
+
+```C++
+    #define PR(x) cout << #x " = " << x << "\n";
+```
+
+如果调用宏`PR(a)`来打印变量a的值， 它和下面的代码有同样的效果：
+
+```C++
+    cout << "a = " << a << "\n";
+```
+
+> 代码示例：
+[46_StringizingExpressions.cpp]()
+
+```C++
+    // C03:46_StringizingExpressions.cpp
+    #include <iostream>
+    using namespace std;
+
+    #define P(A) cout << #A << ": " << (A) << endl;
+
+    int main()
+    {
+        int a = 1, b = 2, c = 3;
+        P(a); P(b); P(c);
+        P(a + b);
+        P((c - a) / b);
+    }
+```
+
+### 3.9.3 C语言assert()宏
+
+在标准头文件<cassert>中，会发现`assert()`是一个方便的调试宏。当使用`assert()`时，给它一个参数，即一个表示断言为真的表达式。预处理器产生测试该断言的代码。如果断言不为真，则在发出一个错误信息告诉断言是什么以及它失败之后，程序会终止。
+> 代码示例：
+[47_Assert.cpp]()
+
+```C++
+    // C03:47_Assert.cpp
+    // Use of the assert() debugging macro
+
+    #include <iostream>
+    #include <cassert>
+    using namespace std;
+
+    int main()
+    {
+        int i = 100;
+        assert(i != 100);   // Fails
+    }
 ```
