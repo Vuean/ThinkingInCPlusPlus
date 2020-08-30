@@ -2043,7 +2043,7 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 ```
 
 > 代码示例：
-[46_StringizingExpressions.cpp]()
+[46_StringizingExpressions.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/46_StringizingExpressions.cpp)
 
 ```C++
     // C03:46_StringizingExpressions.cpp
@@ -2063,9 +2063,9 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 
 ### 3.9.3 C语言assert()宏
 
-在标准头文件<cassert>中，会发现`assert()`是一个方便的调试宏。当使用`assert()`时，给它一个参数，即一个表示断言为真的表达式。预处理器产生测试该断言的代码。如果断言不为真，则在发出一个错误信息告诉断言是什么以及它失败之后，程序会终止。
+在标准头文件`<cassert>`中，会发现`assert()`是一个方便的调试宏。当使用`assert()`时，给它一个参数，即一个表示断言为真的表达式。预处理器产生测试该断言的代码。如果断言不为真，则在发出一个错误信息告诉断言是什么以及它失败之后，程序会终止。
 > 代码示例：
-[47_Assert.cpp]()
+[47_Assert.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/47_Assert.cpp)
 
 ```C++
     // C03:47_Assert.cpp
@@ -2081,3 +2081,72 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
         assert(i != 100);   // Fails
     }
 ```
+
+这个宏来源于标准C, 所以在头文件`assert.h`中也可以使用。当完成调试后，通过在程序的`#include<cassert>`之前插入语句行`#define NDEBUG`或者在编译器命令行中定义`ndebug`，可以消除宏产生的代码。
+
+## 3.10 函数地址
+
+一且函数被编译并载入计算机中执行，它就会占用一块内存。可以通过指针使用函数地址，就像可以使用变量的地址一样。
+
+### 3.10.1 定义函数指针
+
+要定义一个指针**指向一个无参无返回值的函数**，可写为：
+
+`void (*funcPte) ();`
+
+面对复杂定义时，可采用“从中间开始”和“向外扩展”的方式解读定义。“从中间开始”的意思是从变量名开始，这里是指`funcPtr`。“向外扩展”的意思是先注意右边最近的项
+（在这个例子中没有该项，以右括号结束），然后注意左边（用星号表示的指针），注意右边（空参数表表示这个函数没有带任何参数），再注意左边(void指示函数没有返回值）。大多数声明都是以**左-右-左**动作的方式工作的。
+
+上述定义中，`*funcPte`需要括号，如果不使用括号则位：`void *funcPte();`，这可能是声明一个函数（返回一个void*）。
+
+### 3.10.2 复杂的声明和定义
+
+```C++
+    /* 1. */ void *(*(*fp1)(int))[10];
+    /* 2. */ float (*(*pf2)(int, int, float))(int);
+    /* 3. */ typedef double (*(*(*fp3) ()) [10]) ();
+             fp3 a;
+    /* 4. */ int (*(*f4())[10])();
+```
+
+第一条说明：“fp1是一个指向函数的指针，该函数接受一个整型参数，并返回一个指向含有10个void指针数组的指针。”
+
+第二条说明：“fp2是一个指向函数的指针，该函数接受三个参数(int, int, float)且返回一个指向函数的指针，该函数指针接受一个整型参数并返回一个float。”
+
+第三条说明：“fp3是一个指向函数的指针，该函数无参数，且返回一个指向含有10个指向函数指针数组的指针，这些函数不接受参数且返回double值。”
+
+第四条说明：不是变量定义而是函数定义。“f4是一个返回指针的函数，该指针指向含有10个函数指针的数组，这些函数返回整型值。”
+
+### 3.10.3 使用函数指针
+
+一且定义了一个函数指针，在使用前**必须给它赋一个函数的地址**。函数`func()`的地址也是由没有参数列表的函数名(`func`)产生的。也可以使用更加明显的语法`&func()`。为了调用这个函数，应当用与声明相同的方法间接引用指针。
+> 代码示例：
+[48_PointerToFunction.cpp]()
+
+```C++
+    // C03:48_PointerToFunction.cpp
+    // Defining and using a pointer to a function
+    #include <iostream>
+    using namespace std;
+
+    void func(){
+        cout << "func() called..." << endl;
+    }
+
+    int main()
+    {
+        void (*fp)();   // Define a function pointer
+        fp = func;  // Initialize it
+        (*fp)();    // Dereferencing(接触指针的关联) calls the function
+        void (*fp2)() = func; // Define and initialize
+        (*fp2)();
+    }
+```
+
+用`fp = func`使`fp`获得函数`func()`的地址。
+
+### 3.10.4 指向函数的指针数组
+
+下面的例子使用预处理宏创建了一些哑函数，然后使用自动集合初始化功能创建指向这些函数的指针数组。正如看到的那样， 很容易从表中添加或删除函数：
+> 代码示例：
+[48_PointerToFunction.cpp]()
