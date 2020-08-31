@@ -2121,7 +2121,7 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 
 一且定义了一个函数指针，在使用前**必须给它赋一个函数的地址**。函数`func()`的地址也是由没有参数列表的函数名(`func`)产生的。也可以使用更加明显的语法`&func()`。为了调用这个函数，应当用与声明相同的方法间接引用指针。
 > 代码示例：
-[48_PointerToFunction.cpp]()
+[48_PointerToFunction.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/48_PointerToFunction.cpp)
 
 ```C++
     // C03:48_PointerToFunction.cpp
@@ -2149,4 +2149,39 @@ C＋＋中不用转换是不允许从`void*`中赋值的（不像C）。
 
 下面的例子使用预处理宏创建了一些哑函数，然后使用自动集合初始化功能创建指向这些函数的指针数组。正如看到的那样， 很容易从表中添加或删除函数：
 > 代码示例：
-[48_PointerToFunction.cpp]()
+[49_FunctionTable.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/3.%20The%20C%20in%20C%2B%2B/49_FunctionTable.cpp)
+
+```C++
+    // C03:49_FunctionTable.cpp
+    // Using an array of pointers to functions
+    #include <iostream>
+    using namespace std;
+
+    // A macro to define dummy functions:
+    #define DF(N) void N() {\
+        cout << "function " #N " called..." << endl;}
+
+    DF(a); DF(b); DF(c); DF(d); DF(e); DF(f); DF(g);
+
+    void (*func_table[])() = { a, b, c, d, e, f, g};
+
+    int main()
+    {
+        while(1){
+            cout << "press a key from 'a' to 'g' " "or q to quit" << endl;
+            char c, cr;
+            cin.get(c); cin.get(cr);
+            if(c == 'q')
+                break;
+            if(c < 'a' || c > 'g')
+                continue;
+            (*func_table[c - 'a'])();
+        }
+    }
+```
+
+## 3.11 make：管理分段编译(待补充)
+
+当使用**分段编译(separate compilation)**（把代码拆分为许多翻译单元）时，需要某种方法去自动编译每个文件并且告诉连接器把所有分散的代码段，连同适当的库和启动代码，构造成一个可执行的文件。
+
+使用这种方法的问题是编译器事先要编译每个文件而不管文件是否需要重建。解决问题的方法是用一个称为`make`的程序。
