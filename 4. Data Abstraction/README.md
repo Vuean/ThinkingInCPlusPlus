@@ -132,7 +132,7 @@
 为了测试这个库，我们创建两个CStash。第一个存放int，第二个存放由80个char组成
 的数组：
 > 代码示例：
-[C4_02_CLibTest.cpp]()
+[C4_02_CLibTest.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/4.%20Data%20Abstraction/C4_02_CLibTest.cpp)
 
 ```C++
     // C04: C4_02_CLibTest.cpp
@@ -189,7 +189,30 @@ C++有严格的类型检查， 它不允许直接向其他类型赋`void*`(C允�
 
 C++中，函数可以放在`struct`内部，作为“成员函数”。`CStash`的C版本翻译成C++的`Stash`后是：
 > 代码示例：
-[C4_03_CPPLib.h]()
+[C4_03_CPPLib.h](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/4.%20Data%20Abstraction/C4_03_CPPLib.h)
+
+```C++
+// C04: C4_03_CPPLib.h
+struct Statsh{
+    int size;       // size of each space
+    int quantity;   // number of storage space
+    int next;       // NEXT EMPTY SPACE
+    // Dynamically allocated array of bytes:
+    unsigned char* storage;
+
+    void initialize(int size);
+    void cleanup();
+    int add(const char* element);
+    int count();
+    void inflate(int increase);
+};
+```
+
+在C+＋中，不是硬性传递这个结构的地址作为在这个结构上运算的所有函数的第一个参数，而是编译器秘密地做这件事。
+
+`::` 作用域解析运算符。
+> 代码示例:
+[C4_03_CPPLib.cpp]()
 
 ```C++
 
