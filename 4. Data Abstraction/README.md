@@ -212,8 +212,199 @@ struct Statsh{
 
 `::` 作用域解析运算符。
 > 代码示例:
-[C4_03_CPPLib.cpp]()
+[C4_03_CPPLib.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/4.%20Data%20Abstraction/C4_03_CPPLib.cpp)
 
 ```C++
+// C04: C4_03_CPPLib.cpp
+// Declare structure and functions:
+#include "C4_03_CPPLib.h"
+#include <iostream>
+#include <cassert>
+using namespace std;
 
+// Quantity of elements to add when increasing Storage:
+const int increment= 100;
+
+void Stash::initialize(int sz)
+{
+    size = sz;
+    quantity = 0;
+    storage = 0;
+    next = 0;
+}
+
+int Stash::add(const void* element)
+{
+    if(next >= quantity)
+        inflate(increment);
+    int startBytes = next * size;
+    unsigned char* e = (unsigned char*)element;
+    for (int i = 0; i < size; i++)
+    storage[startBytes + i] = e[i];
+    next++;
+    return (next - 1);
+}
+
+void* Stash::fetch(int index)
+{
+    assert(0 <= index);
+    if (index >= next)
+        return 0;
+    return &(storage[index * size]);
+}
+
+int Stash::count()
+{
+    return next;
+}
+
+void Stash::inflate(int increase)
+{
+    assert(increase > 0);
+    int newQuantity = quantity + increase;
+    int newBytes = newQuantity * size;
+    int oldBytes = quantity * size;
+    unsigned char* b = new unsigned char[newBytes];
+    for (int i = 0; i < oldBytes; i++)
+        b[i] = storage[i];
+    delete []storage;
+    storage = b;
+    quantity = newQuantity;
+}
+
+void Stash::cleanup()
+{
+    if (storage != 0)
+    {
+        cout << "freeing storage" << endl;
+        delete []storage;
+    }
+}
 ```
+
+头文件中的声明是由编译器要求的。在C++中，不能调用未事先声明的函数，否则编译器将报告一个出错信息。
+
+在C中，可以赋`void*`给任何指针，但C++中，这是不允许的，因为类型在C++中是严格的。
+
+```C++
+    int i = 10;
+    void* vp = &i;  // OK in both C and C++
+    int* ip = vp;   // Only acceptable in C;
+```
+
+C++允许将任何类型的指针赋给`void*`（这是`void*`的最初的意图，它需要足够大，以存放任何类型的指针），但不允许将`void`指针赋给任何其他类型的指针。
+
+在下面的测试程序中，可以看到`Stash`的C++版本所使用的另一些东西。
+> 代码示例:
+[C4_03_CPPLibTest.cpp]()
+
+```C++
+    #include "C4_03_CPPLib.h"
+    #include "../require.h"
+    #include <fstream>
+    #include <iostream>
+    #include <string>
+    using namespace std;
+
+    int main() {
+        Stash intStash;
+        intStash.initialize(sizeof(int));
+        for (int i = 0; i < 100; i++)
+            intStash.add(&i);
+        for (int j = 0; j < intStash.count(); j++)
+            cout << "intStash.fetch(" << j << ") = "
+                << *(int*)intStash.fetch(j)
+                << endl;
+        // Ñòðîêè èç 80 ñèìâîëîâ:
+
+        Stash stringStash;
+        const int bufsize = 200;
+        stringStash.initialize(sizeof(char) * bufsize);
+
+        ifstream in("CppLibTest.cpp");
+        assure(in, "CppLibTest.cpp");
+        string line;
+        while (getline(in, line))
+            stringStash.add(line.c_str());
+
+        int k = 0;
+        char* cp;
+        while ((cp = (char*)stringStash.fetch(k++)) != 0)
+            cout << "stringStash.fetch" << k << ") = "
+                << cp << endl;
+        intStash.cleanup();
+        stringStash.cleanup();
+    }
+```
+
+## 4.4 什么是对象
+
+将函数放在结构体内，结构体就变成了新的创造物，它技能描写属性，又能描写行为，这就形成了**对象**的概念。
+
+在C++中，**对象就是变量**，它的最纯正的定义是“一块存储区”（更准确地可称为：对象必须有惟一的标识）。
+
+## 4.5 抽象数据类型
+
+将数据连同函数捆绑在一起的能力可以用千创建新的数据类型。这常常被称为**封装(encapsulation)**。
+
+## 4.6 对象细节
+
+一个`struct`的大小是它的所有成员大小的和。有时，当一个`struct`被编译器处理时，会增加额外的字节以使得边界整齐，这主要是为了提高执行效率。
+
+用`sizeof()`运算符确定`struct`的长度：
+
+> 代码示例:
+[C4_04_Sizeof.cpp]()
+
+```C++
+    // C04: C4_04_Sizeof.cpp
+    // sizeof struct
+    #include <iostream>
+    #include "C4_01_Clib.h"
+    #include "C4_03_CPPLib.h"
+    using namespace std;
+
+    struct A{
+        char c;
+        int i[100]; // 单独一个数组时是400字节
+    };
+
+    struct B{
+        void f();
+    };
+
+    void B::f() {}
+
+    int main()
+    {
+        cout << "sizeof struct A = " << sizeof(A) << " bytes." << endl;
+        cout << "sizeof struct B = " << sizeof(B) << " bytes." << endl;
+        cout << "sizeof CStash in C = " << sizeof(CStash) << " bytes." << endl;
+        cout << "sizeof CStash in C++ = " << sizeof(Stash) << " bytes." << endl;
+        return 0;
+    }
+```
+
+`struct B`在C中是不允许的，在C++中，以这种选择方式创建一个`struct`，惟一的目的就是划定函数名的范围，所以这是允许的。**对象的基本规则之一是每个对象必须有一个惟一的地址，因此，无数据成员的结构总应当有最小的非零长度**。
+
+## 4.7 头文件形式
+
+通常在头文件中方放入**声明**信息，头文件告诉编译器在我们的库中哪些是可用的。**头文件是存放接口规范的地方**。
+
+### 4.7.1 头文件的重要性
+
+在C++中，如果在一个头文件中声明了一个`struct`，我们在使用`struct`的任何地方和定义这个`struct`成员函数的任何地方必须包含这个头文件。如果不经声明就调用常规函数，调用或定义成员函数，C++编译器会给出错误消息。通过强制正确地使用头文件，语言保证库中的一致性，并通过在各处强制使用相同的接口，可以减少程序错误。
+
+### 4.7.2 多次声明的问题
+
+头文件的第二个问题是：如果把一个`struct`声明放在一个头文件中，就有可能在一个编译程序中多次包含这个头文件，可能存在**多次包含和重声明**的危险。
+
+C和C++都**允许重声明函数**，只要两个声明匹配即可，但是两者都**不允许重声明结构**。
+
+### 4.7.3 预处理器指示#define、#ifdef、#endif
+
+预处理器指示`#define`可以用来创建编译时标记。可以选择预处理器被定义，但不指定特定的值：`#define FLAG`；或给它一个值：`#define PI 3.14159`。
+
+无论哪种情况，预处理器都能测试该标记，检查它是否已经被定义：`#ifdef FLAG`，这将得到一个真值，`#ifdef`后面的代码将包含在发送给编译器的包中。当预处理器遇到语句`#endif`或`#endif //FLAG`时包含终止。
+
+`#define`的反意是`#undef`，它将使得使用相同变量的`#ifdef`语句得到假值。`#undef`还引起预处理器停止使用宏。`#ifdef`的反意是`#ifndef`，如果标记还没有定义，它得到真值。

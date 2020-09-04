@@ -1,5 +1,5 @@
 // C04: C4_03_CPPLib.h
-struct Statsh{
+struct Stash{
     int size;       // size of each space
     int quantity;   // number of storage space
     int next;       // NEXT EMPTY SPACE
@@ -8,7 +8,8 @@ struct Statsh{
 
     void initialize(int size);
     void cleanup();
-    int add(const char* element);
+    int add(const void* element);
+    void* fetch(int index);
     int count();
     void inflate(int increase);
 };
