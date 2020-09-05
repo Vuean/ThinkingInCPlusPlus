@@ -296,7 +296,7 @@ C++允许将任何类型的指针赋给`void*`（这是`void*`的最初的意图
 
 在下面的测试程序中，可以看到`Stash`的C++版本所使用的另一些东西。
 > 代码示例:
-[C4_03_CPPLibTest.cpp]()
+[C4_03_CPPLibTest.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/4.%20Data%20Abstraction/C4_03_CPPLibTest.cpp)
 
 ```C++
     #include "C4_03_CPPLib.h"
@@ -354,7 +354,7 @@ C++允许将任何类型的指针赋给`void*`（这是`void*`的最初的意图
 用`sizeof()`运算符确定`struct`的长度：
 
 > 代码示例:
-[C4_04_Sizeof.cpp]()
+[C4_04_Sizeof.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/4.%20Data%20Abstraction/C4_04_Sizeof.cpp)
 
 ```C++
     // C04: C4_04_Sizeof.cpp
@@ -408,3 +408,74 @@ C和C++都**允许重声明函数**，只要两个声明匹配即可，但是两
 无论哪种情况，预处理器都能测试该标记，检查它是否已经被定义：`#ifdef FLAG`，这将得到一个真值，`#ifdef`后面的代码将包含在发送给编译器的包中。当预处理器遇到语句`#endif`或`#endif //FLAG`时包含终止。
 
 `#define`的反意是`#undef`，它将使得使用相同变量的`#ifdef`语句得到假值。`#undef`还引起预处理器停止使用宏。`#ifdef`的反意是`#ifndef`，如果标记还没有定义，它得到真值。
+
+### 4.7.4 头文件的标准
+
+对千包含结构的每个头文件，应当首先检查这个头文件是否已经包含在特定的cpp文件中了，可通过测试预处理器的标记来检查：如果这个标记没有设置，这个文件没有包含，则应当设置它（所以这个结构不会被重声明），并声明这个结构。如果这个标记已经设置，则表明这个类型已经声明了，所以应当忽略这段声明它的代码。
+
+```C++
+    #ifndef HEADER_FLAG
+    #define HEADER_FLAG
+    // Type declaration here...
+    #endif // HEADER_FLAG
+```
+
+但沿用的可靠标准是大写这个头文件的名字并且用下划线替换句点，如：
+
+```C++
+    // C04: Simple.h
+    // Simple header that prevents re-definition
+    #ifndef SIMPLE_H
+    #define SIMPLE_H
+    struct Simple
+    {
+        int i, j, k;
+        initialize() {i = j = k = 0;}
+    };
+    #endif // SIMPLE_H
+```
+
+虽然`#endif`之后的`SIMPLE_H`是注释，并且预处理器忽略它，但它对于文档是有用的。防止多次包含的这些预处理器语旬常常称为**包含守卫(include guard)**。
+
+### 4.7.5 头文件中的名字空间
+
+在这本书的几乎所有cpp文件中都有使用**指令(using directive)**描述，通常的形式如下：`using namespace std;`。
+
+但是，在头文件中是决不会看到使用指令的（至少，不在一个范围之外）。原因是，这样的使用指令**去除了对这个特定名字空间的保护**，并且这个结果一直持续到当前编译单元结束。如果将一个使用指令放在一个头文件中（在一个范围之外），这就意味着“名字空间保护”将在包含这个头文件的任何文件中消失，这些文件常常是其他的头文件。这样，如果将使用指令放在头文件中，将很容易最终实际上在各处“关闭”名字空间，因此不能体现名字空间的好处。
+
+简言之，**不要在头文件中放置使用指令**。
+
+### 4.7.6 在项目使用头文件
+
+当用C++建立项目时，我们通常要汇集大量不同的类型（带有相关函数的数据结构）。一般将每个类型或一组相关类型的声明放在一个单独的头文件中，然后在一个处理单元中定义这个类型的函数。当使用这个类型时必须包含这个头文件，执行正确的声明。
+
+## 4.8 嵌套结构
+
+我们可以将一个结构嵌套在另一个结构中，这就可以将相关联的元素放在一起。如下，这个结构用简单链表方式实现了一个**下推栈(push-down stack)**，所以它绝不会越出内存。
+> 代码示例
+[C4_05_Stack.h]()
+
+```C++
+    // C04: C4_05_Stack.h
+    // Nested struct in linked list
+    #ifndef STACK_H
+    #define STACK_H
+
+    struct Stack
+    {
+        struct Link
+        {
+            void* data;
+            Link* next;
+            void initialize(void* data, Link* nxt);
+        }* head;
+        void initialize();
+        void push(void* dat);
+        void* peek();
+        void* pop();
+        void cleanup();
+    };
+
+    #endif  // STACK_H
+```
+
