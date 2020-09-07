@@ -486,7 +486,7 @@ C和C++都**允许重声明函数**，只要两个声明匹配即可，但是两
 如上所述，嵌套结构具有自己的`initialize()`函数，确保正确的初始化；还有`cleanup()`函数；`push()`函数，取一个指向希望存放的数据（假设已经分配在堆中）的指针；`pop()`函数，返回栈顶的`data`指针并去除栈顶元素（当`pop()`一个元素时，同时销毁由`data`所指的对象）；`peek()`函数，从栈顶返回`data`指针，但是它在栈(Stack)中保留这个栈顶元素。函数定义：
 
 > 代码示例：
-[C4_05_Stack.cpp]()
+[C4_05_Stack.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/4.%20Data%20Abstraction/C4_05_Stack.cpp)
 
 ```C++
     // C04: C4_05_Stack.cpp
@@ -536,7 +536,7 @@ C和C++都**允许重声明函数**，只要两个声明匹配即可，但是两
 
 当你要用作用域解析运算符指定一个全局名字时，在运算符前面不加任何东西。下面是一个显示变量和函数的全局作用域解析的例子：
 > 代码示例：
-[C4_06_Scoperes.cpp]()
+[C4_06_Scoperes.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/4.%20Data%20Abstraction/C4_06_Scoperes.cpp)
 
 ```C++
     // C04: C4_06_Scoperes.cpp
