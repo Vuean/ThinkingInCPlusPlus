@@ -453,7 +453,7 @@ C和C++都**允许重声明函数**，只要两个声明匹配即可，但是两
 
 我们可以将一个结构嵌套在另一个结构中，这就可以将相关联的元素放在一起。如下，这个结构用简单链表方式实现了一个**下推栈(push-down stack)**，所以它绝不会越出内存。
 > 代码示例
-[C4_05_Stack.h]()
+[C4_05_Stack.h](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/4.%20Data%20Abstraction/C4_05_Stack.h)
 
 ```C++
     // C04: C4_05_Stack.h
@@ -479,3 +479,97 @@ C和C++都**允许重声明函数**，只要两个声明匹配即可，但是两
     #endif  // STACK_H
 ```
 
+这个嵌套`struct`称为`Link`，它包括一个指向这个表中的下一个`Link`的指针和一个指向存放在`Link`中的数据的指针。如果`next`指针是零，这就意味着到了表尾。
+
+注意：`head`指针紧接在`struct Link`声明之后定义，而不是单独定义`Link* head`。这是C语言的文法，强调在结构声明之后的分号的重要性，分号表明这个结构类型用逗号分开的定义表结束。
+
+如上所述，嵌套结构具有自己的`initialize()`函数，确保正确的初始化；还有`cleanup()`函数；`push()`函数，取一个指向希望存放的数据（假设已经分配在堆中）的指针；`pop()`函数，返回栈顶的`data`指针并去除栈顶元素（当`pop()`一个元素时，同时销毁由`data`所指的对象）；`peek()`函数，从栈顶返回`data`指针，但是它在栈(Stack)中保留这个栈顶元素。函数定义：
+
+> 代码示例：
+[C4_05_Stack.cpp]()
+
+```C++
+    // C04: C4_05_Stack.cpp
+    // Linked list with nesting
+    #include "C4_05_Stack.h"
+    #include <iostream>
+    using namespace std;
+
+    void Stack::Link::initialize(void* dat, Link* nxt)
+    {
+        data = dat;
+        next = nxt;
+    }
+
+    void Stack::initialize() {head = 0;}
+
+    void Stack::push(void* dat)
+    {
+        Link* newLink = new Link;
+        newLink->initialize(dat, head);
+        head = newLink;
+    }
+
+    void* Stack::peek()
+    {
+        require(head != 0, "Stack empty");
+        return head->data;
+    }
+
+    void* Stack::pop()
+    {
+        if(head == 0) return 0;
+        void* result = head->data;
+        Link* oldHead = head;
+        head = head->next;
+        delete oldHead;
+        return result;
+    }
+
+    void Stack::cleanup()
+    {
+        require(head == 0, "Stack not empty");
+    }
+```
+
+### 4.8.1 全局作用域解析
+
+当你要用作用域解析运算符指定一个全局名字时，在运算符前面不加任何东西。下面是一个显示变量和函数的全局作用域解析的例子：
+> 代码示例：
+[C4_06_Scoperes.cpp]()
+
+```C++
+    // C04: C4_06_Scoperes.cpp
+    // Global scope resolution
+    #include <iostream>
+    using namespace std;
+    int a = 0;
+
+    void f() {}
+
+    struct S{
+        int a = 5;
+        void f();
+    };
+
+    void S::f() {
+        ::f();  // Would be recursive otherwise!
+        ::a++;  // select the global a
+        cout << ::a << endl;
+        a--;    // The a at struct scope
+        cout << a << endl;
+    }
+
+    int main()
+    {
+        S s;
+        s.f();
+        f();
+    }
+```
+
+如果在`S::f()`中没有作用域解析运算符，编译器会默认地选择成员函数的`f()`和`a`。
+
+## 4.9 小结
+
+结构的这种新类型称为**抽象数据类型(abstract data type)**，用这种结构创建的变量称为这个类型的**对象(object)**或**实例(instance)**。调用对象的成员函数称为向这个对象**发消息(sending a message)**。在面向对象的程序设计中的主要动作就是向对象发消息。
