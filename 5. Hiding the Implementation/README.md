@@ -18,7 +18,7 @@ C++中的**访问说明符(access specifier)**包括：`public`、`private`、`p
 `public`意味着在其后声明的所有成员可以被所有的人访问。`public`成员就如同一般的`struct`成员。比如，下面的`struct`声明是相同的：
 
 > 代码示例:
-[C5_01_Public.cpp]()
+[C5_01_Public.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/5.%20Hiding%20the%20Implementation/C5_01_Public.cpp)
 
 ```C++
     // C05: C5_01_Public.cpp
@@ -57,7 +57,7 @@ C++中的**访问说明符(access specifier)**包括：`public`、`private`、`p
 `priVate`关键字则意味着，除了该类型的创建者和类的内部成员函数之外，任何人都不能访问。在上面的例子中，我们可以让`struct B`中的部分数据成员隐藏起来，只有我们自己能访问它们：
 
 > 代码示例:
-[C5_02_Private.cpp]()
+[C5_02_Private.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/5.%20Hiding%20the%20Implementation/C5_02_Private.cpp)
 
 ```C++
 // C05: C5_02_Private.cpp
@@ -87,4 +87,91 @@ int main()
     // b.c = 'c';  // Error, private
     // b.f = 3.14;
 }
+```
+
+虽然`func()`函数可以访问B的所有成员，但一般的全局函数如`main()`函数却不能访问。当然其他结构的成员函数同样也不能访问。只有那些在结构声明(“合约”）中明确声明的函数才能访问这些`private`成员。
+
+`protected`和`private`基本相似，只有一点不同，继承的结构可以访问`protected`成员，但不能访问`private`成员。
+
+## 5.3 友元
+
+在某结构内部声明一个函数为**friend（友元）**，则该不属于当前结构的函数可以当前结构中的数据。**一个`friend`必须在一个结构内声明**。
+
+程序员可以把一个全局函数声明为`friend`，也可以把另一个结构中的成员函数甚至整个结构都声明为`friend`。
+
+> 代码示例：
+[C5_03_Friend.cpp]()
+
+```C++
+    // C05: C5_03_Friend.cpp
+    // Friend allows special access
+
+    // Declaration (incomplete type specification):
+    # include <iostream>
+    using namespace std;
+    struct X;
+
+    struct Y{
+        void f(X*);
+    };
+
+    struct X{
+    private:
+        int i;
+    public:
+        void initialize();
+        friend void g(X*, int); // Global friend
+        friend void Y::f(X*);   // struct member friend
+        friend struct Z;        // Entire struct os a friend
+        friend void h();
+    };
+
+    void X::initialize()
+    {
+        i = 0;
+    }
+
+    void g(X* x, int i)
+    {
+        x->i = i;
+    }
+
+    void Y::f(X* x)
+    {
+        x->i = 47;
+    }
+
+    struct Z{
+    private:
+        int j;
+    public:
+        void initialize();
+        void g(X* x);
+    };
+
+    void Z::initialize()
+    {
+        j = 99;
+    }
+
+    void Z::g(X* x)
+    {
+        x->i += j;
+        cout << x->i;
+    }
+
+    void h()
+    {
+        X x;
+        x.i = 100;  // Direct data manipulation
+    }
+
+    int main()
+    {
+        X x;
+        x.initialize();
+        Z z;
+        z.initialize();
+        z.g(&x);
+    }
 ```
