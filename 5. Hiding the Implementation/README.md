@@ -100,7 +100,7 @@ int main()
 程序员可以把一个全局函数声明为`friend`，也可以把另一个结构中的成员函数甚至整个结构都声明为`friend`。
 
 > 代码示例：
-[C5_03_Friend.cpp]()
+[C5_03_Friend.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/5.%20Hiding%20the%20Implementation/C5_03_Friend.cpp)
 
 ```C++
     // C05: C5_03_Friend.cpp
@@ -175,3 +175,199 @@ int main()
         z.g(&x);
     }
 ```
+
+此例中，`struct Y`有一个成员函数`f()`，它将修改`X`类型的对象。但因为C++的编译器要求在引用任一变最之前必须先声明，所以`struct Y`必须在它的成员`Y::f(X*)`被声明为`struct X`的一个友元之前声明，但要声明`Y::f(X*)`，又必须先声明`struct X`。
+
+因为`Y::f(X*)`引用了一个`X`对象的**地址(address)**，所以即使编译器还没有完全知道这种对象类型大小，也知道如何传递地址。但如果试图传递整个对象，编译器就必须知道`X`的全部定义以确定它的大小以及如何传递，这就使得**程序员无法去声明一个类似于`y::g(X)`的函数**。
+
+通过传递`X`的地址，编译器允许程序员在声明`Y::f(X*)`之前做一个`X`的**不完全的类型说明(incomplete type specification)**--`struct X`。
+
+该声明仅仅是告诉编译器，有一个叫`X`的`struct`，所以当它被引用时，只要不涉及名字以外的其他信息，就不会产生错误。
+
+其他两个friend函数，第一个声明将一个全局函数`g()`作为一个`friend`，但`g()`在
+这之前并没有在全局范围内作过声明，**这表明`friend`可以在声明函数的同时又将它作为`struct`的友元**。
+
+这种扩展声明对整个结构体同样有效：`friend struct Z;`，是`Z`的一个不完全的类型说明，并把整个结构都当做一个`friend`。
+
+### 5.3.1 嵌套友元
+
+嵌套的结构并不能自动获得访问`private`成员的权限。要获得访问私有成员的权限，必须遵守特定的规则：**首先声明（而不定义）一个嵌套的结构，然后声明它是全局范围使用的一个`friend`，最后定义这个结构**。结构的定义必须与`friend`声明分开，否则编译器将不把它看做成员。
+
+> 代码示例：
+[C5_04_NestFriend.cpp]()
+
+```C++
+    // C05: C5_04_NestFriend.cpp
+    // Nested friends
+    #include <iostream>
+    #include <cstring>  // memset()
+    using namespace std;
+    const int sz = 20;
+
+    struct Holder{
+    private:
+        int a[sz];
+    public:
+        void initialize();
+        struct Pointer;
+        friend Pointer;
+
+        struct Pointer{
+        private:
+            Holder* h;
+            int* p;
+        public:
+            void initialize(Holder* h);
+            // Move around in the array
+            void next();
+            void previous();
+            void top();
+            void end();
+            // Access values:
+            int read();
+            void set(int i);
+        };
+    };
+
+    void Holder::initialize()
+    {
+        memset(a, 0, sz * sizeof(int));
+    }
+
+    void Holder::Pointer::initialize(Holder* rv)
+    {
+        h = rv;
+        p = rv->a;
+    }
+
+    void Holder::Pointer::next()
+    {
+        if(p < &(h->a[sz - 1])) p++;
+    }
+
+    void Holder::Pointer::previous()
+    {
+        if(p > &(h->a[0])) p--;
+    }
+
+    void Holder::Pointer::top()
+    {
+        p = &(h->a[0]);
+    }
+
+    void Holder::Pointer::end()
+    {
+        p = &(h->a[sz - 1]);
+    }
+
+    int Holder::Pointer::read()
+    {
+        return *p;
+    }
+
+    void Holder::Pointer::set(int i)
+    {
+        *p = i;
+    }
+
+    int main()
+    {
+        Holder h;
+        Holder::Pointer hp, hp2;
+        int i;
+
+        h.initialize();
+        hp.initialize(&h);
+        hp2.initialize(&h);
+
+        for(int i = 0; i < sz; i++)
+        {
+            hp.set(i);
+            hp.next();
+        }
+
+        hp.top();
+        hp2.end();
+
+        for(i = 0; i < sz; i++)
+        {
+            cout << "hp = " << hp.read() << ", hp2 = " << hp2.read() << endl;
+            hp.next();
+            hp2.previous();
+        }
+    }
+```
+
+一旦`Pointer`被声明，它就可以通过`friend Pointer;`语句来获得访问Holder的私有成员的权限。
+
+`struct Holder`包含一个`int`数组和一个`Pointer`，可以通过`Pointer`来访问这些整数。因为`Pointer`与`Holder`紧密联系，所以有必要将它作为结构`Holder`中的一个成员。但是，又因为`Pointer`是同`Holder`分开的，所以程序员可以在函数`main()`中定义它们的多个实例，然后用它们来选择数组的不同部分。
+
+使用标准C语言库函数`memset()`（在`<cstring>`中）可以使上面的程序变得容易。它把起始于某一特定地址的内存（该内存作为第一个参数）从起始地址直至其后的n（n作为第三个参数）个字节的所有内存都设置成同一个特定的值（该值作为第二个参数）。
+
+## 5.4 对象布局
+
+在一个特定的“访问块”（被访问说明符限定的一组声明）内，这些变量在内存中是连续存放的。
+
+## 5.5 类
+
+访问控制通常是指实现**细节的隐藏(implementation hiding)**。将函数包含到一个结构内(常称为封装)来产生一种带数据和操作的数据类型，由访问控制在该数据类型之内确定边界。原因有：第一，可以决定哪些客户程序员可以用， 哪些客户程序员不能用；第二，可将具体实现与接口分离开来。
+
+C++中class和struct在每个方面都是一样的，**除了class中的成员默认为`private`，而struct中的成员默认为`public`**。
+
+> 代码示例：
+[C5_05_Class.cpp]()
+
+```C++
+    // C05: C5_05_Class.cpp
+    // Similarity of struct and class
+
+    struct A
+    {
+    private:
+        int i, j, k;
+    public:
+        int f();
+        void g();
+    };
+
+    int A::f()
+    {
+        return i + j + k;
+    }
+
+    void A::g()
+    {
+        i = j = k = 0;
+    }
+
+    // Identical results are produced with:
+
+    class B
+    {
+        int i, j, k;
+    public:
+        int f();
+        void g();
+    };
+
+    int B::f()
+    {
+        return i + j + k;
+    }
+
+    void B::g()
+    {
+        i = j = k = 0;
+    }
+
+    int main()
+    {
+        A a;
+        B b;
+        a.f(); a.g();
+        b.f(); b.g();
+    }
+```
+
+### 5.5.1 用访问控制来修改Stash
+
