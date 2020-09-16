@@ -194,7 +194,7 @@ int main()
 嵌套的结构并不能自动获得访问`private`成员的权限。要获得访问私有成员的权限，必须遵守特定的规则：**首先声明（而不定义）一个嵌套的结构，然后声明它是全局范围使用的一个`friend`，最后定义这个结构**。结构的定义必须与`friend`声明分开，否则编译器将不把它看做成员。
 
 > 代码示例：
-[C5_04_NestFriend.cpp]()
+[C5_04_NestFriend.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/5.%20Hiding%20the%20Implementation/C5_04_NestFriend.cpp)
 
 ```C++
     // C05: C5_04_NestFriend.cpp
@@ -315,7 +315,7 @@ int main()
 C++中class和struct在每个方面都是一样的，**除了class中的成员默认为`private`，而struct中的成员默认为`public`**。
 
 > 代码示例：
-[C5_05_Class.cpp]()
+[C5_05_Class.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/5.%20Hiding%20the%20Implementation/C5_05_Class.cpp)
 
 ```C++
     // C05: C5_05_Class.cpp
@@ -371,3 +371,62 @@ C++中class和struct在每个方面都是一样的，**除了class中的成员�
 
 ### 5.5.1 用访问控制来修改Stash
 
+现在把第4章的例子用类及访问控制来改写一下。请注意客户程序员的接口部分现在已经很清楚地区分开了，完全不用担心客户程序员会偶然地访问到他们不该访问的内容了。
+
+> 代码示例：
+[C5_06_Stash.h]()
+
+```C++
+    // C05:C5_06_Stash.h
+    // Converted to use access control
+    #ifndef C5_06_STASH_H
+    #define C5_06_STASH_H
+    class Stash
+    {
+        int size;       // size of each space
+        int quantity;   // number of storage spaces
+        int next;       // next empty space
+        // Dynamically allocated array of bytes:
+        unsigned char* storage;
+        void inflate (int increase);
+    public:
+        void initialize(int size);
+        void cleanup();
+        int add(void* element);
+        void* fetch(int index);
+        int count();
+    };
+
+    #endif // C5_06_STASH_H
+```
+
+`inflate()`函数声明为`private`，因为它只被`add()`函数调用，所以它属于内部实现部分，不属于接口部分。
+
+### 5.5.2 用访问控制来修改Stack
+
+对于第二个例子，我们把`Stack`改写成一个类。现在嵌套的数据结构是`private`。这样做的好处是可以确保客户程序员既看不到，也不依赖于`Stack`的内部表示：
+> 代码示例：
+[C5_07_Stack2.h]()
+
+```C++
+    // C05: C5_07_Stack2.h
+    // Nested structs via linked list
+
+    #ifndef C5_07_STACK2_H
+    #define C5_07_STACK2_H
+
+    class Stack {
+        struct Link{
+            void* data;
+            Link* next;
+            void initialize(void* dat, Link* nxt);
+        }* head;
+    public:
+        void initialize();
+        void push(void* dat);
+        void* peek();
+        void* pop();
+        void cleanup();
+    };
+    #endif // C5_07_STACK2_H
+```
