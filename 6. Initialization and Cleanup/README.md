@@ -1,195 +1,293 @@
-# 5. 隐藏实现
+# 6. 初始化与清除
 
-本章重点讨论结构中得边界问题。
+安全性包括初始化和清除两个方面。在C++中，初始化和清除的概念是简化库的使用的关键所在，并可以减少那些在客户程序员忘记去完成这些操作时会引起的细微错误。
 
-## 5.1 设置限制
+## 6.1 用构造函数确保初始化
 
-在任何关系中，设立相关各方都遵从的边界是很重要的。一且建立了一个库，我们就与该库的**客户程序员(client programmer)**建立了一种关系，客户程序员需要用我们的库来编写应用程序或建立另外的库。
+类的设计者可以通过提供一个叫做**构造函数**(**constructor**)的特殊函数来保证每个对象都被初始化。
 
-需要控制对结构成员的访问有两个理由：一是让客户程序员远离一些他们不需要使用的工具，这些工具对数据类型内部的处理来说是必需的，但对客户程序员解决特定问题的接口
-却不是必须的。
+构造函数的名字与类的名字一样。这样的函数在初始化时会自动被调用。传递到构造函数的第一个（秘密）参数是this指针，也就是调用这一函数的对象的地址，不过，对构造函数来说，this指针指向一个没有被初始化的内存块，构造函数的作用就是正确的初始化该内存块。
 
-访问控制的理由之二是允许库的设计者改变struct的内部实现，而不必担心会对客户程序员产生影响。
+## 6.2 用析构函数确保清除
 
-## 5.2 C++的访问控制
-
-C++中的**访问说明符(access specifier)**包括：`public`、`private`、`protected`。无论什么时候使用访问说明符， 后面必须加一个冒号。
-
-`public`意味着在其后声明的所有成员可以被所有的人访问。`public`成员就如同一般的`struct`成员。比如，下面的`struct`声明是相同的：
+析构函数的语法与构造函数一样，用类的名字作为函数名。然而析构函数前面加上一个代字号（~），以和构造函数区别。另外，析构函数不带任何参数，因为析构不需任何选项。
 
 > 代码示例:
-[C5_01_Public.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/5.%20Hiding%20the%20Implementation/C5_01_Public.cpp)
+[C6_01_Constructor.cpp]()
 
 ```C++
-    // C05: C5_01_Public.cpp
-    // Public is just like C's struct
+    // C6_01_Constructor.cpp
+    // Constructors & destructors
+    #include <iostream>
+    using namespace std;
 
-    struct A
+    class Tree
     {
-        int i;
-        char c;
-        float f;
-        void func();
-    };
-    void A::func() {}
-
-    struct B
-    {
+        int height;
     public:
-        int i;
-        char c;
-        float f;
-        void func();
+        Tree(int initialHeight);    // Constructor
+        ~Tree(); // Destructor
+        void grow(int years);
+        void printsize();
     };
-    void B::func() {}
+
+    Tree::Tree(int initialHeight)
+    {
+        height = initialHeight;
+    }
+
+    Tree::~Tree()
+    {
+        cout << "inside Tree destructors" << endl;
+        printsize();
+    }
+
+    void Tree::grow(int years){
+        height += years;
+    }
+
+    void Tree::printsize()
+    {
+        cout << "Tree heights is " << height << endl;
+    }
 
     int main()
     {
-        A a; B b;
-        a.i = b.i = 1;
-        a.c = b.c = 'c';
-        a.f = b.f = 1.0;
-        a.func();
-        b.func();
+        cout << "before opening brace: " << endl;
+        {
+            Tree t(12);
+            cout << "after Tree creation" << endl;
+            t.printsize();
+            t.grow(4);
+            cout << "before closing brace: " << endl;
+        }
+        cout << "after closing brace: " << endl;
+    }
+
+    /*
+        运行结果：
+        before opening brace:
+        after Tree creation
+        Tree heights is 12
+        before closing brace:
+        inside Tree destructors
+        Tree heights is 16
+        after closing brace:
+    */
+```
+
+可以看到析构函数在包括它的右括号处被调用。
+
+## 6.3 清除定义块
+
+在C++中，对一个对象适用的所有规则，对内部类型的对象也同样适用。这意味着任何类的对象或者内部类型的变量都可以在块的任何地方定义。这也意味着可以等到已经知道一个变量的必要信息时再去定义它，所以总是可以同时定义和初始化一个变量。
+
+> 代码示例:
+[C6_02_DefineInitialize.cpp]()
+
+```C++
+    // C06: DefineInitialize.cpp
+    // Defining variables anywhere
+    # include "..\require.h"
+    # include <iostream>
+    #include <string>
+    using namespace std;
+
+    class G
+    {
+        int i;
+    public:
+        G(int ii);
+    };
+
+    G::G(int ii) { i = ii; }
+
+    int main()
+    {
+        cout << "initialization value? ";
+        int retval = 0;
+        cin >> retval;
+        require(retval != 0);
+        int y = retval + 3;
+        G g(y);
     }
 ```
 
-`priVate`关键字则意味着，除了该类型的创建者和类的内部成员函数之外，任何人都不能访问。在上面的例子中，我们可以让`struct B`中的部分数据成员隐藏起来，只有我们自己能访问它们：
+上例中可以看到先是执行一些代码，然后retval被定义和初始化，接着是一条用来接受客户程序员输入的语句，最后定义y和g。然而，在C中这些变量都只能在块的开始处定义。
 
-> 代码示例:
-[C5_02_Private.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/5.%20Hiding%20the%20Implementation/C5_02_Private.cpp)
+一般说来，应该在尽可能靠近变址的使用点处定义变量，并在定义时就初始化，以减少变量在块中的生命周期，减少该变量在块的其他地方被误用的机会。
+
+### 6.3.1 for循环
 
 ```C++
-// C05: C5_02_Private.cpp
-// Setting the boundary
-
-struct B
-{
-private:
-    char c;
-    float f;
-public:
-    int i;
-    void func();
-};
-
-void B::func()
-{
-    i = 0;
-    c = 'a';
-    f = 1.0;
-}
-
-int main()
-{
-    B b;
-    b.i = 1;    // OK, public
-    // b.c = 'c';  // Error, private
-    // b.f = 3.14;
-}
+    for(int j = 0; j < 100; j++)
+        cout << "j = " << j << endl;
+    for(int i = 0; i < 100; i++)
+        cout << "i = " << i << endl;
 ```
 
-虽然`func()`函数可以访问B的所有成员，但一般的全局函数如`main()`函数却不能访问。当然其他结构的成员函数同样也不能访问。只有那些在结构声明(“合约”）中明确声明的函数才能访问这些`private`成员。
+变量i和j都是在for表达式中直接定义的（在C中不能这样做），然后它们就可以作为一个变量在for循环中使用。
 
-`protected`和`private`基本相似，只有一点不同，继承的结构可以访问`protected`成员，但不能访问`private`成员。
+要注意局部变量会屏蔽其封闭块内的其他同名变量。通常，使用与全局变量同名的局部变量会使人产生误解， 并且也易于产生错误。
 
-## 5.3 友元
+### 6.3.2 内存分配
 
-在某结构内部声明一个函数为**friend（友元）**，则该不属于当前结构的函数可以当前结构中的数据。**一个`friend`必须在一个结构内声明**。
+一个变量可以在某个程序范围内的任何地方定义，所以在这个变量的定义之前是无法对它分配内存空间的。即使存储空间在块的一开始就被分，构造函数也仍然要到对象的定义时才会被调用，因为标识符只有到此时才有效。
 
-程序员可以把一个全局函数声明为`friend`，也可以把另一个结构中的成员函数甚至整个结构都声明为`friend`。
+> 代码示例
+[C6_03_Nojump.cpp]()
+
+```C++
+    // C06: Nojump.cpp
+    // Can't jump past constructors
+
+    class X
+    {
+    public:
+        X();
+    };
+
+    X::X() {}
+
+    void f(int i)
+    {
+        if (i < 10)
+        {
+            // !goto jumpl; // error: goto bypass init
+        }
+        X x1;   // Constructor called here
+        jumpl:
+        switch (i)
+        {
+            case 1: 
+                X x2;
+                break;
+            case 2:
+                X x3;
+                break;
+        }
+    }
+
+    int main()
+    {
+        f(9);
+        f(11);
+    }
+```
+
+这里讨论的内存分配都是在堆栈中进行的。内存分配是通过编译器向下移动堆栈指针来实现的（这里的“向下”是相对而言的，实际指针值增加，还是减少，取决于机器）。也可以在堆栈中使用new为对象分配内存。
+
+## 6.4 带有构造函数和析构函数的Stash
+
+建立带有构造函数和析构函数的Stash头文件。
 
 > 代码示例：
-[C5_03_Friend.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/5.%20Hiding%20the%20Implementation/C5_03_Friend.cpp)
+[C6_04_Stash2.h]()
 
 ```C++
-    // C05: C5_03_Friend.cpp
-    // Friend allows special access
+    // C06: Stash2.h
+    // With Constructors and Destructors
+    #ifndef STASH2_H
+    #define STASH2_H
 
-    // Declaration (incomplete type specification):
-    # include <iostream>
+    class Stash
+    {
+        int size;           // Size of each space
+        int quantity;       // Number of storage spaces
+        int next;           // Next empty space
+        // Dynamically allocated array of bytes:
+        unsigned char* storage;
+        void inflate(int increase);     // inflate：使充气，使膨胀
+    public:
+        Stash(int size);
+        ~Stash();
+        int add(void* element);
+        void* fetch(int index);         // fetch：取，拿
+        int count();
+    };
+
+    #endif // STASH2_H
+```
+
+以下为实现文件，用构造函数和析构函数分别代替了initialize()和cleanup()函数。
+
+> 代码示例：
+[C6_05_Stash2.cpp]()
+
+```C++
+    // C06:Stash2.cpp
+    // Constructors & destructors
+    #include "C6_04_Stash2.h"
+    #include "../require.h"
+    #include <iostream>
+    #include <cassert>
     using namespace std;
-    struct X;
+    const int increment = 100;
 
-    struct Y{
-        void f(X*);
-    };
-
-    struct X{
-    private:
-        int i;
-    public:
-        void initialize();
-        friend void g(X*, int); // Global friend
-        friend void Y::f(X*);   // struct member friend
-        friend struct Z;        // Entire struct os a friend
-        friend void h();
-    };
-
-    void X::initialize()
+    Stash::Stash(int sz)
     {
-        i = 0;
+        size = sz;
+        quantity = 0;
+        storage = 0;
+        next = 0;
     }
 
-    void g(X* x, int i)
+    int Stash::add(void* element)
     {
-        x->i = i;
+        if(next >= quantity)    // Enough space left?
+            inflate(increment);
+        // Copy element into storage
+        // starting at next empty space:
+        int startBytes = next * size;
+        unsigned char* e = (unsigned char*) element;
+        for (int i = 0; i < size; i++)
+            storage[startBytes + i] = e[i];
+        next++;
+        return (next - 1);  // Index number
     }
 
-    void Y::f(X* x)
+    void* Stash::fetch(int index)
     {
-        x->i = 47;
+        require(0 <= index, "Stash::fetch (-)index");
+        if(index >= next)
+            return 0;   // To indicate the end
+        // Produce pointer to desired element:
+        return &(storage[index * size]);
     }
 
-    struct Z{
-    private:
-        int j;
-    public:
-        void initialize();
-        void g(X* x);
-    };
-
-    void Z::initialize()
+    int Stash::count()
     {
-        j = 99;
+        return next;    // Number of elements in CStash
     }
 
-    void Z::g(X* x)
+    void Stash::inflate(int increase)
     {
-        x->i += j;
-        cout << x->i;
+        require(increase > 0, "Stash::inflate zero or negative increase");
+        int newQuantity = quantity + increase;
+        int newBytes = newQuantity * size;
+        int oldBytes = quantity * size;
+        unsigned char* b = new unsigned char[newBytes];
+        for(int i = 0; i < oldBytes; i++)
+            b[i] = storage[i];  // Copy old to new
+        delete [] (storage);    // Delete old storage
+        storage = b;    // point to new memory
+        quantity = newQuantity;
     }
 
-    void h()
+    Stash::~Stash()
     {
-        X x;
-        x.i = 100;  // Direct data manipulation
-    }
-
-    int main()
-    {
-        X x;
-        x.initialize();
-        Z z;
-        z.initialize();
-        z.g(&x);
+        if(storage != 0)
+        {
+            cout << "freeing storage" << endl;
+            delete [] storage;
+        }
     }
 ```
 
-此例中，`struct Y`有一个成员函数`f()`，它将修改`X`类型的对象。但因为C++的编译器要求在引用任一变最之前必须先声明，所以`struct Y`必须在它的成员`Y::f(X*)`被声明为`struct X`的一个友元之前声明，但要声明`Y::f(X*)`，又必须先声明`struct X`。
+`require.h`中的函数是用来监视程序员错误的， 代替函数`assert()`的作用。但是函数`assert()`对失败操作的输出不及`require.h`的函数有效。
 
-因为`Y::f(X*)`引用了一个`X`对象的**地址(address)**，所以即使编译器还没有完全知道这种对象类型大小，也知道如何传递地址。但如果试图传递整个对象，编译器就必须知道`X`的全部定义以确定它的大小以及如何传递，这就使得**程序员无法去声明一个类似于`y::g(X)`的函数**。
+因为`inflate()`是私有的，所以`require()`不能正确执行的惟一情况就是：其他成员函数意外地把一些不正确的值传递给了`inflate()`。
 
-通过传递`X`的地址，编译器允许程序员在声明`Y::f(X*)`之前做一个`X`的**不完全的类型说明(incomplete type specification)**--`struct X`。
-
-该声明仅仅是告诉编译器，有一个叫`X`的`struct`，所以当它被引用时，只要不涉及名字以外的其他信息，就不会产生错误。
-
-其他两个friend函数，第一个声明将一个全局函数`g()`作为一个`friend`，但`g()`在
-这之前并没有在全局范围内作过声明，**这表明`friend`可以在声明函数的同时又将它作为`struct`的友元**。
-
-这种扩展声明对整个结构体同样有效：`friend struct Z;`，是`Z`的一个不完全的类型说明，并把整个结构都当做一个`friend`。
-
-### 5.3.1 嵌套友元
 
 嵌套的结构并不能自动获得访问`private`成员的权限。要获得访问私有成员的权限，必须遵守特定的规则：**首先声明（而不定义）一个嵌套的结构，然后声明它是全局范围使用的一个`friend`，最后定义这个结构**。结构的定义必须与`friend`声明分开，否则编译器将不把它看做成员。
 
