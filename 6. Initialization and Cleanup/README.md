@@ -287,7 +287,7 @@
 在下面测试程序中，**Stash**对象的定义放在紧靠使用对象的地方，对象的初始化通过构造函数的参数列表来实现，而对象的初始化似乎成了对象定义的一部分。
 
 > 代码示例
-[C6_06_Stash2Test.cpp]()
+[C6_06_Stash2Test.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/6.%20Initialization%20and%20Cleanup/C6_06_Stash2Test.cpp)
 
 ```C++
     // C6: Stash2Test.cpp
@@ -328,7 +328,7 @@
 重新实现含有构造函数和析构函数的链表（在Stack内），看看使用new和delete时，构造函数和析构函数怎样巧妙地工作。
 
 > 代码示例：
-[C6_07_Stack3.h]()
+[C6_07_Stack3.h](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/6.%20Initialization%20and%20Cleanup/C6_07_Stack3.h)
 
 ```C++
     // C06: Stack3.h
@@ -356,7 +356,7 @@
 ```
 
 > 代码示例：
-[C6_08_Stack3.cpp]()
+[C6_08_Stack3.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/6.%20Initialization%20and%20Cleanup/C6_08_Stack3.cpp)
 
 ```C++
     // C06: Stack3.cpp
@@ -404,7 +404,7 @@
 因为分配和清除`Link`对象的实现隐藏在类`Stack`中，它是内部实现的一部分，所以在测试程序中看不到它运行的结果，尽管从`pop()`返回的指针由我们负责删除。
 
 > 代码示例：
-[C6_09_Stack3Test.cpp]()
+[C6_09_Stack3Test.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/6.%20Initialization%20and%20Cleanup/C6_09_Stack3Test.cpp)
 
 ```C++
     // C06:Stack3Test.cpp
@@ -439,3 +439,105 @@
 
 ## 6.6 集合初始化
 
+C++中**集合初始化**(**aggregate initialization**)，指定的初值要用大括号括起来。如`int a[5] = {1, 2, 3, 4, 5};`，但如果给出的初始值多于数组元素的个数，则会报错。如果给的初始值少于数组元素个数，如`int b[6] = {0};`，则编译器会把第一个初始化值赋给数组的第一个元素， 然后用0赋给其余的元素。
+
+数组还有一种叫**自动计数**(**automatic counting**)的快速初始化方法，就是让编译器按初始化值的个数去决定数组的大小：`int c[] = {1, 2, 3, 4};`。如果决定增加另一个元素到这个数组上，只要增加一个初始化值即可，如果以此建立我们的代码，只需在一处作出修改即可，这样，在修改时出错的机会就减少了。
+
+计算数组数组大小：用表达式**sizeof c / sizeof *c(整个数组的大小除以第一个元素的大小)**。
+
+因为结构也是一种集合类型，所以它们也可以用同样的方式初始化：
+
+```C++
+    struct X
+    {
+        int i;
+        float f;
+        char c;
+    };
+
+    X x1 = {1, 2.2, 'c'};
+```
+
+如果有一个这种struct的数组，也可以用嵌套的大括号来初始化每一个对象：`X x2[3] = {{1, 2.2, 'c'}, {2, 3.3, 'b'}};`。
+
+这里，第三个对象被初始化为**零**。
+
+如果struct中有私有成员（典型的情况就是C++中设计良好的类），或即使所有成员都是公共成员，但有构造函数，情况就不一样了。在上例中，初始值被直接赋给了集合中的每个元素，但构造函数是通过正式的接口来强制初始化的。这里，构造函数必须被调用来完成初始化，因此，如果有一个下面的struct类型：
+
+```C++
+    struct Y
+    {
+        float f;
+        int i;
+        Y(int a);
+    }
+```
+
+必须指示构造函数调用，最好的方法如：`Y y1[] = {Y(1), Y(2), Y(3)};`。这样就得到了三个对象和进行了三次构造函数调用。无论是所有成员都是公共的struct还是一个带私有成员的class，所有的初始化工作都必须通过构造函数来完成，即使正在对一个集合初始化。
+
+下面是多构造函数参数的又一个例子：
+
+> 代码示例：
+[C6_10_Multiarg.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/6.%20Initialization%20and%20Cleanup/C6_10_Multiarg.cpp)
+
+```C++
+    // C06: Multiarg.cpp
+    // Multiple constructor arguments with aggregate initialization
+    #include <iostream>
+    using namespace std;
+
+    class Z
+    {
+        int i, j;
+    public:
+        Z(int ii, int jj);
+        void print();
+    };
+
+    Z::Z(int ii, int jj)
+    {
+        i = ii;
+        j = jj;
+    }
+
+    void Z::print()
+    {
+        cout << "i = " << i << ", j = " << j << endl;
+    }
+
+    int main()
+    {
+        Z zz[] = {Z(1, 2), Z(3, 4), Z(5, 6), Z(7, 8)};
+        for(int i = 0; i < sizeof(zz)/sizeof(*zz); i++)
+            zz[i].print();
+    }
+```
+
+## 6.7 默认构造函数
+
+**默认构造函数**(**default constructor**) 就是不带任何参数的构造函数。默认的构造函数用来创建一个“原型(vanilla)对象”，当编译器需要创建一个对象而又不知任何细节时，默认的构造函数就显得非常重要。
+
+记住，**一旦有了一个构造函数，编译器就会确保不管在什么情况下它总会被调用**。默认的构造函数非常重要，所以当（且仅当）在一个结构(struct或class)中没有构造函数时，编译器会自动为它创建一个。因此下面例子将会正常运行：
+
+> 代码示例：
+[C6_11_AutoDefaultConstructor.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/6.%20Initialization%20and%20Cleanup/C6_11_AutoDefaultConstructor.cpp)
+
+```C++
+    // C06:AutoDefaultConstructor.cpp
+    // Automatically-generated default constructor
+
+    class V
+    {
+        int i;  // private
+    };
+
+    int main()
+    {
+        V v, v2[10];
+    }
+```
+
+## 6.9 小结
+
+构造函数与析构函数让我们保证正确地初始化和清除对象（编译器将不允许没有调用构造函数与析构函数就直接创建与销毁一个对象），使我们
+得到了完全的控制与安全。
