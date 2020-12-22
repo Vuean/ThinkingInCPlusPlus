@@ -361,3 +361,299 @@ a = 10
 ```
 
 ## 9.3 带内联函数的Stash和Stack
+
+引入了内联函数，现在，可以把`Stash`和`Stack`类变得更有效。
+
+> 代码示例：
+[C9_07_Stash4.h](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/9.%20Inline%20Functions/C9_07_Stash4.h)
+
+```C++
+    // C9_07_Stash4.h
+    #ifndef STASH4_H
+    #define STASH4_H
+    #include "../require.h"
+
+    class Stash
+    {
+        int size;
+        int quantity;
+        int next;
+        // Dynamically allocated array of bytes:
+        unsigned char* storage;
+        void inflate(int increase);
+    public:
+        Stash(int sz) : size(sz), quantity(0), 
+            next(0), storage(0) {}
+        Stash(int sz, int initQuantity) : size(sz), quantity(0), 
+            next(0), storage(0)
+        {
+            inflate(initQuantity);
+        }
+        Stash::~Stash()
+        {
+            if(storage != 0)
+                delete []storage;
+        }
+        int add(void* element);
+        void* fetch(int index) const
+        {
+            require(0 <= index, "Stash::fetch (-)index");
+            if(index >= next)
+                return 0;
+            // produce pointer to desired element:
+            return &(storage[index * size]);
+        }
+        int count() const {return next;}
+    }
+
+    #endif // STASH4_H
+```
+
+小函数作为内联函数工作是理想的，但要注意：两个最大的函数仍旧保留为非内联函数，因为要是把它们作为内联使用的话，很可能在性能上得不到什么改善。
+
+> 代码示例：
+[C9_07_Stash4.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/9.%20Inline%20Functions/C9_07_Stash4.cpp)
+
+```C++
+    // C9_07_Stash4.cpp
+    #include "C9_07_Stash4.h"
+    #include <iostream>
+    #include <cassert>
+    using namespace std;
+    const int increment = 100;
+
+    int Stash::add(void* element)
+    {
+        if(next >= quantity)    // Enough space left
+            inflate(increment);
+        // Copy element into storage starting at next empty space
+        int startBytes = next * size;
+        unsigned char* e = (unsigned char*)element;
+        for(int i = 0; i < size; i++)
+            storage[startBytes + i] = e[i];
+        next++;
+        return(next - 1);
+    }
+
+    void Stash::inflate(int increase)
+    {
+        assert(increase >= 0);
+        if(increase == 0) return;
+        int newQuantity = quantity + increase;
+        int newBytes = newQuantity * size;
+        int oldBytes = quantity * size;
+        unsigned char* b = new unsigned char[newBytes];
+        for(int i = 0; i < oldBytes; i++)
+            b[i] = storage[i];
+        delete [] storage;
+        storage = b;
+        quantity = newQuantity;
+    }
+```
+
+测试程序：
+
+> 代码示例：
+[C9_08_StashTest.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/9.%20Inline%20Functions/C9_08_StashTest.cpp)
+
+```C++
+// C9_08_StashTest.cpp
+# include "C9_07_Stash4.h"
+# include "../require.h"
+# include <fstream>
+# include <iostream>
+# include <string>
+using namespace std;
+
+int main()
+{
+    Stash intStash(sizeof(int)) ;
+    for(int i = 0; i < 100; i++)
+        intStash.add(&i) ;
+    for (int j = 0; j < intStash.count() ; j++)
+        cout << "intStash.fetch( " << j << ") = "
+             << *(int*) intStash.fetch(j)
+             << endl;
+    const int bufsize = 80;
+    Stash stringStash(sizeof(char) * bufsize, 100);
+    ifstream in("Stash4Test.cpp");
+    assure(in, "Stash4Test.cpp");
+    string line;
+    while(getline(in, line))
+        stringStash.add((char*)line.c_str());
+    int k = 0;
+    char* cp;
+    while((cp = (char*)stringStash.fetch(k++)) != 0)
+        cout << "StringStash.fectch(" << k << ") = " << cp << endl;
+}
+```
+
+## 9.4 内联函数和编译器
+
+当调用一个内联函数时，编译器首先确保调用正确，即所有的参数类型必须满足：要么与函数参数表中的参数类型一样，要么编译器能够将其转换为正确类型，并且返回值在目标表达式里应该是正确类型或可改变为正确类型。
+
+假如内联函数也是成员函数，对象的地址(`this`)就会被放入合适的地方，这个动作当然也是预处理器不能完成的。
+
+### 9.4.1 限制
+
+有两种编译器不能执行内联的情况。在这些情况下，它就像对非内联函数一样， 根据内联函数定义和为函数建立存储空间，简单地将其转换为函数的普通形式。
+
+**假如函数太复杂，编译器将不能执行内联**。
+
+**假如要显式地或隐式地取函数地址，编译器也不能执行内联**。因为这时编译器必须为函数代码分配内存从而产生一个函数的地址。
+
+内联仅是编译器的一个建议，编译器不会被强迫内联任何代码。
+
+### 9.4.2 向前引用
+
+> 代码示例：
+[C9_09_EvaluationOrder.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/9.%20Inline%20Functions/C9_09_EvaluationOrder.cpp)
+
+```C++
+    // C9_09_EvaluationOrder.cpp
+    // Inline evaluation order
+
+    class Forward
+    {
+        int i;
+    public:
+        Forward() : i(0) {}
+        // Call to undeclared function
+        int f() const {return g() + 1;}
+        int g() const {return i;}
+    };
+
+    int main()
+    {
+        Forward frwd;
+        frwd.f();
+    }
+```
+
+函数`f()`调用`g()`，但此时还没有声明`g()`。这也能正常工作，因为C++语言规定：只有在类声明结束后，其中的内联函数才会被计算。
+
+当然，如果`g()`反过来调用`f()`，就会产生递归调用，这对于编译器来说太复杂而不能执行内联。
+
+### 9.4.3 在构造函数和析构函数里隐藏行为
+
+构造函数和析构函数都可能隐藏行为，因为类可以包含子对象，子对象的构造函数和析构函数必须被调用。下面是一个带成员对象的例子：
+
+> 代码示例：
+[C9_10_Hidden.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/9.%20Inline%20Functions/C9_10_Hidden.cpp)
+
+```C++
+    // C9_10_Hidden.cpp
+    // Hidden activities in inlines
+    #include <iostream>
+    using namespace std;
+
+    class Member
+    {
+        int i, j, k;
+    public:
+        Member(int x = 0) : i(x), j(x), k(x) {}
+        ~Member() {cout << "~Member()" << endl;}
+    };
+
+    class WithMembers
+    {
+        Member q, r, s;
+        int i;
+    public:
+        WithMembers(int ii) : i(ii) {}
+        ~WithMembers() {cout << "~WithMembers" << endl;}
+    };
+
+    int main()
+    {
+        WithMembers wm(1);
+    }
+```
+
+成员对象`q`、`r`和`s`的构造函数和析构函数将被自动调用，这些构造函数和析构函数也是内联的，所以它们和普通的成员函数的差别是非常显著的。
+
+## 9.5 减少混乱
+
+使用关键字`inline`优化`Rectangle.cpp`：
+
+> 代码示例：
+[C9_11_Noinsitu.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/9.%20Inline%20Functions/C9_11_Noinsitu.cpp)
+
+```C++
+    // C9_11_Noinsitu.cpp
+    // Removing in situ functions
+
+    class Rectangle
+    {
+        int width, height;
+    public:
+        Rectangle(int w = 0, int h = 0);
+        int getWidth() const;
+        void setWidth(int w);
+        int getHeight() const;
+        void setHeight(int h);
+    };
+
+    inline Rectangle::Rectangle(int w, int h)
+        : width(w), height(h) {}
+
+    inline int Rectangle::getWidth() const { return width; }
+
+    inline void Rectangle::setWidth(int w) { width = w; }
+
+    inline int Rectangle::getHeight() const { return height; }
+
+    inline void Rectangle::setHeight(int h) { height = h;}
+
+    int main()
+    {
+        Rectangle r(19, 47);
+        int iHeight = r.getHeight();
+        r.setHeight(r.getWidth());
+        r.setWidth(iHeight);
+    }
+```
+
+## 9.6 预处理器的更多特征
+
+几乎总是希望使用内联函数代替预处理器宏，但**字符串定义、字符串拼接和标志粘贴**例外。
+
+字符串定义的完成是用`#`指示，它容许取一个标识符并把它转化为字符数组，然而字符串拼接在当两个相邻的字符串没有分隔符时发生，在这种情况下字符串组合在一起。如：`#define DEBUD(x) cout << #x " = "  << x << endl`。
+
+上面的语句可以打印任何变量的值。也可以得到一个跟踪信息，在此信息里打印出它们执行的语句：`#define TRACE(s) cerr << #s << endl; s`。
+
+`#s`将输出语句字符。第2个`s`重申了该语句，所以这个语句被执行。当然，这可能会产生问题，尤其是在一行`for`循环中。
+
+```C++
+    for(int i = 0; i < 100; i++)
+        TRACE(f(i));
+```
+
+因为在`TRACE()`宏里实际上有两个语句，所以一行`for`循环只执行第一个。解决办法是`在宏中用逗号代替分号`。
+
+### 9.6.1 标志粘贴
+
+标志粘贴直接用`##`实现，在写代码时是非常有用的。**它允许设两个标识符并把它们粘贴在一起自动产生一个新的标识符**。
+
+```C++
+    #define FIELD(a) char* a++_string; int a##_size
+    class Record
+    {
+        FIELD(one);
+        FIELD(two);
+        FIELD(three);
+        // ...
+    };
+```
+
+每次调用`FIELD()`宏，将产生一个保存字符数组的标识符和另一个保存字符数组长度的标识符。它不仅易读而且消除了编码出错，使维护更容易。
+
+## 9.7 改进的错误检查
+
+[require.h](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/require.h)
+
+应该注意异常处理机制为处理各种错误提供了一种更加有效的方法，而不只是中止程序的运行。
+
+## 9.8 小结
+
+内联函数消除了预处理器宏和伴随的问题。通过用内联函数方式，成员函数可以和预处理器宏一样有效。
