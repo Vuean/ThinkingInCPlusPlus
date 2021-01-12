@@ -15,7 +15,7 @@ C和C++指针的最重要的区别在于C++是一种类型要求更强的语言�
 **引用**(**reference**)(`&`)就像能自动地被编译器间接引用的常量型指针。它通常用于函数的参数表中和函数的返回值，但也可以独立使用。例如：
 
 > 代码示例：
-[C11_01_FreeStandingReferences.cpp]()
+[C11_01_FreeStandingReferences.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/11.%20Reference%20and%20the%20Copy-Constructor/C11_01_FreeStandingReferences.cpp)
 
 ```C++
     // C11_01_FreeStandingReferences.cpp
@@ -57,7 +57,7 @@ C和C++指针的最重要的区别在于C++是一种类型要求更强的语言�
 如果从函数中返回一个引用，必须像从函数中返回一个指针一样对待。当函数返回时，无论引用关连的是什么都应该存在，否则，将不知道指向哪一个内存。
 
 > 代码示例：
-[C11_02_Reference.cpp]()
+[C11_02_Reference.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/11.%20Reference%20and%20the%20Copy-Constructor/C11_02_Reference.cpp)
 
 ```C++
     // C11_02_Reference.cpp
