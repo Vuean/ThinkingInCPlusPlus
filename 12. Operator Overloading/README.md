@@ -14,7 +14,7 @@
 2) 运算符被定义为全局函数（对于一元是一个参数，对于二元是两个参数）还是成员函数。
 
 > 代码示例：
-[C12_01_OperatorOverloadingSyntax.cpp]()
+[C12_01_OperatorOverloadingSyntax.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_01_OperatorOverloadingSyntax.cpp)
 
 ```C++
     // C12_01_OperatorOverloadingSyntax.cpp
@@ -51,3 +51,8 @@
         kk.print();
     }
 ```
+
+这两个重载的运算符被定义为内联成员函数，在它们被调用时会显示信息。对于二元运算符，惟一的参数是出现在运算符右侧的那个操作数。当一元运算符被定义为成员函数时，是没有参数的。所调用的成员函数属于运算符左侧的那个对象。
+
+## 12.3 可重载的运算符
+
