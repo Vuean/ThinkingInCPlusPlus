@@ -56,3 +56,205 @@
 
 ## 12.3 可重载的运算符
 
+运算符重载的使用是相当受限制的：不能使用C中当前没有意义的运算符（例如用**代表求幕）；不能改变运算符的优先级；不能改变运算符的参数个数。
+
+### 12.3.1 一元运算符
+
+下面的例子显示了重载所有一元运算符的语法，有全局函数形式（非成员的友元函数）也有成员函数形式。它们将扩充前面给出的类`Integer`并且增加一个新类`byte`。
+
+> 代码示例：
+[C12_02_OverloadingUnaryOperators.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_02_OverloadingUnaryOperators.cpp)
+
+```C++
+    // C12_02_OverloadingUnaryOperators.cpp
+    #include <iostream>
+    using namespace std;
+
+    class Integer
+    {
+        long i;
+        Integer* This() {return this;}
+    public:
+        Integer(long ll = 0) : i(ll) {}
+        // No side effects takes const& argument:
+        friend const Integer& operator+(const Integer& a);
+        friend const Integer operator-(const Integer& a);
+        friend const Integer operator~(const Integer& a);
+        friend Integer* operator&(Integer& a);
+        friend int operator!(const Integer& a);
+
+        // side effects have non-const& argument:
+        // Prefix:
+        friend const Integer& operator++(Integer& a);
+        // Prefix:
+        friend const Integer operator++(Integer& a, int);
+        // Prefix:
+        friend const Integer& operator--(Integer& a);
+        // Prefix:
+        friend const Integer operator--(Integer& a, int);
+    };
+
+    // Global operators:
+    const Integer& operator+(const Integer& a)
+    {
+        cout << "+Integer\n";
+        return a;   // Unary(一元的) + has n o effect
+    }
+
+    const Integer operator-(const Integer& a)
+    {
+        cout << "+Integer\n";
+        return Integer(-a.i);
+    }
+
+    const Integer operator~(const Integer& a) 
+    {
+        cout << "~Integer\n" ;
+        return Integer(~a.i);
+    }
+
+    Integer* operator&(Integer& a) 
+    {
+        cout << "&Integer\n" ;
+        return a.This();    // &a is recursive(递归的).
+    }
+
+    int operator!(const Integer& a)
+    {
+        cout << "!Integer\n";
+        return !a.i;
+    }
+
+    // Prefix; return incremented value
+    const Integer& operator++(Integer& a)
+    {
+        cout << "++Integer\n";
+        a.i++;
+        return a;
+    }
+
+    // Postfix; return the value before increment:
+    const Integer operator++(Integer& a, int)
+    {
+        cout << "++Integer\n";
+        Integer before(a.i);
+        a.i++;
+        return before;
+    }
+
+    // Prefix; return decremented value
+    const Integer& operator--(Integer& a)
+    {
+        cout << "--Integer\n";
+        a.i--;
+        return a;
+    }
+
+    // Postfix; return the value be fore decrement:
+    const Integer operator--(Integer& a, int)
+    {
+        cout << "--Integer\n";
+        Integer before(a.i);
+        a.i--;
+        return before;
+    }
+
+    // Show that the overloaded operators work:
+    void f(Integer a)
+    {
+        +a;
+        -a;
+        ~a;
+        Integer* ip = &a;
+        !a;
+        ++a;
+        a++;
+        --a;
+        a--;
+    }
+
+    // Member functions (implicit "this") :
+    class Byte
+    {
+        unsigned char b;
+    public:
+        Byte(unsigned char bb = 0) : b(bb) {}
+        // No side effects : const member function:
+        const Byte& operator+() const
+        {
+            cout << "+Byte\n";
+            return *this;
+        }
+        const Byte operator-() const
+        {
+            cout << "-Byte\n";
+            return Byte(-b);
+        }
+        const Byte operator~() const
+        {
+            cout << "~Byte\n";
+            return Byte(~b);
+        }
+        Byte operator!() const
+        {
+            cout << "!Byte\n";
+            return Byte(!b);
+        }
+        Byte* operator&()
+        {
+            cout << "&Byte\n";
+            return this;
+        }
+        // Side effects: non-const member function:
+        const Byte& operator++() 
+        { // Prefix
+            cout << "++Byte\n";
+            b++;
+            return *this;
+        }
+        const Byte operator++(int) 
+        { // Prefix
+            cout << "Byte++\n";
+            Byte before(b);
+            b++;
+            return before;
+        }
+        const Byte& operator--() 
+        { // Prefix
+            cout << "--Byte\n";
+            --b;
+            return *this;
+        }
+        const Byte operator--(int) 
+        { // Prefix
+            cout << "Byte--\n";
+            Byte before(b);
+            --b;
+            return before;
+        }
+    };
+
+    void g(Byte b)
+    {
+        +b;
+        -b;
+        ~b;
+        Byte* bp = &b;
+        !b;
+        ++b;
+        b++;
+        --b;
+        b--;
+    }
+
+    int main()
+    {
+        Integer a;
+        f(a);
+        Byte b;
+        g(b);
+    }
+```
+
+#### 12.3.1.1 自增和自减
+
