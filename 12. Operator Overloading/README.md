@@ -713,7 +713,53 @@
 [C12_06_ByteTest.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_06_ByteTest.cpp)
 
 ```C++
+    // C12_06_ByteTest.cpp
+    #include "C12_05_Byte.h"
+    #include <fstream>
+    using namespace std;
+    ofstream out("ByteTest.out");
+    void k(Byte& b1, Byte& b2)
+    {
+        b1 = b1 * b2 + b2 % b1;
+    }
 
+    #define TRY2(OP) \
+        out << "b1 = "; b1.print(out); \
+        out << ", b2 = "; b2.print(out); \
+        out << "; b1 " #OP " b2 produces "; \
+        (b1 OP b2).print(out); \
+        out << endl;
+
+    b1 = 9; b2 = 47;
+
+    TRY2(+) TRY2(-) TRY2(*) TRY2(/)
+    TRY2(%) TRY2(^) TRY2(&) TRY2(|)
+    TRY2(<<) TRY2(>>) TRY2(+=) TRY2(-=)
+    TRY2(*=) TRY2(/=) TRY2(%=) TRY2(^=)
+    TRY2(&=) TRY2(!=) TRY2(>>=) TRY2(<<=)
+    TRY2(=) // Assignment operator
+
+    // Conditionals:
+    #define TRYC2 (OP) \
+        out << "b1 ="; b1.ptint(out); \
+        out << ", b2 . = ."; b2.print (out) ; \
+        out << "; b1 " #OP " b2 produces "; \
+        out « (b1 OP b2 ); \
+        out << endl;
+    b1 = 9; b2 = 47;
+    TRYC2(<) TRYC2(>) TRYC2(==) TRYC2(!=) 
+    TRYC2(<=) TRYC2(>=) TRYC2(&&) TRYC2(||)
+
+    // Chained assignment
+    Byte b3 = 92;
+    b1 = b2 = b3;
+
+    int main()
+    {
+        out << "member functions: " << endl;
+        Byte b1(47), b2(9);
+        k(b1, b2);
+    }
 ```
 
 可以看到`operator=`只允许作为成员函数。
@@ -753,4 +799,235 @@
 相反，“返回临时对象”的方式是完全不同的。当编译器看到我们这样做时，它明白对创建的对象没有其他需求，只是返回它，所以编译器直接地把这个对象创建在外部返回值的内存单元。因为不是真正创建一个局部对象，所以仅需要一个普通构造函数调用（不需要拷贝构造函数），且不会调用析构函数。这种方法不需要什么花费，因此效率是非常高的，但程序员要理解这些。这种方式常被称作**返回值优化**(**return value optimization**)。
 
 ### 12.3.4 不常用的运算符
+
+下标运算符`operator[]`，必须是成员函数井且它只接受一个参数。因为它所作用的对象应该像数组一样操作，可以经常从这个运算符返回一个引用，所以它可以被很方便地用于等号左侧。这个运算符经常被重载，可以在本书其他部分看到相关的例子。
+
+#### 12.3.4.1 operator,
+
+当逗号出现在一个对象左右，而该对象的类型是逗号定义所支持的类型时，将调用逗号运算符。然而，`operator,`调用的目标不是函数参数表，而是被逗号分隔开的、没有被括号括起来的对象。除了使语言保持一致性外，这个运算符似乎没有许多实际用途。下面的例子说明了当逗号出现在对象前面以及后面时，逗号函数调用的方式：
+
+> 代码示例：
+[C12_07_OverloadingOperatorComma.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_07_OverloadingOperatorComma.cpp)
+
+```C++
+    // C12_07_OverloadingOperatorComma.cpp
+    #include <iostream>
+    using namespace std;
+
+    class After
+    {
+    public:
+        const After& operator,(const After&) const
+        {
+            cout << "After::operator,()" << endl;
+            return *this;
+        }
+    };
+
+    class Before {};
+
+    Before& operator,(int, Before& b)
+    {
+        cout << "Before::operator,()" << endl;
+        return b;
+    }
+
+    int main()
+    {
+        After a, b;
+        a, b;   // Operator comma, called
+
+        Before c;
+        1, c;
+    }
+```
+
+全局函数允许逗号放在被讨论的对象的前面。这里的用法既晦涩又可疑。虽然还可以再把一个逗号分隔的参数表当做更加复杂的表达式的一部分，但这太灵活了，大多数情况下不能使用。
+
+#### 12.3.4.2 operator->
+
+当希望一个对象表现得像一个指针时，通常就要用到`operator->`。由于这样一个对象比一般的指针有着更多与生俱来的灵巧性，于是常被称作**灵巧指针**(**smart pointer**)。如果想用类包装一个指针以使指针安全，或是在**迭代器**(**iterator**)普通的用法中，这样做会特别有用。
+
+**迭代器**是一个对象，这个对象可以作用于其他对象的容器或集合上，每次选择它们中的一个而不用提供对容器的直接访问。
+
+指针间接引用运算符一定是一个成员函数。它有着额外的、非典型的限制：它**必须返回一个对象**（或对象的引用），该对象也有一个指针间接引用运算符；或者**必须返回一个指针**，被用于选择指针间接引用运算符箭头所指向的内容。下面是一个简单的例子：
+
+> 代码示例：
+[C12_08_SmartPointer.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_08_SmartPointer.cpp)
+
+```C++
+    // C12_08_SmartPointer.cpp
+    #include <iostream>
+    #include <vector>
+    #include "../require.h"
+    using namespace std;
+
+    class Obj
+    {
+        static int i, j;
+    public:
+        void f() const {cout << i++ << endl;}
+        void g() const {cout << j++ << endl;}
+    };
+
+    // Static member definitions:
+    int Obj::i = 47;
+    int Obj::j = 11;
+
+    // Container:
+    class ObjContainer
+    {
+        vector<Obj*> a;
+    public:
+        void add(Obj* obj) {a.push_back(obj);}
+        friend class SmartPointer;
+    };
+
+    class SmartPointer
+    {
+        ObjContainer& oc;
+        int index;
+    public:
+        SmartPointer(ObjContainer& objc) : oc(objc)
+        {
+            index = 0;
+        }
+        // Return value indicates end of list:
+        bool operator++()
+        {
+            if(index >= oc.a.size()) return false;
+            if(oc.a[++index] == 0) return false;
+            return true;
+        }
+        bool operator++(int)
+        {
+            return operator++();
+        }
+        Obj* operator->() const
+        {
+            require(oc.a[index] != 0, "Zero value "
+                "returned by SmartPointer::operator->()");
+            return oc.a[index];
+        }
+    };
+
+    int main()
+    {
+        const int sz = 10;
+        Obj o[sz];
+        ObjContainer oc;
+        for(int i = 0; i < sz; i++)
+            oc.add(&o[i]);
+        SmartPointer sp(oc);    // Create an iterator
+        do{
+            sp->f();    // Pointer dereference operator call
+            sp->g();
+        }while(sp++);
+    }
+```
+
+类`SmartPointer`被声明为友元类，所以它允许进入这个容器内。
+
+在`main()`中，一旦`Obj`对象装入容器`oc`，一个`SmartPointer`类的SP就创建了，并可进行调用：`sp->f();`
+
+尽管`sp`实际上并没有成员函数`f()`和`g()`，但指针间接引用运算符自动地为用`SmartPointer::operator->`返回的`Obj*`调用那些函数。编译器进行所有检查以保证函数调用正确。
+
+#### 12.3.4.3 嵌入的迭代器
+
+更常见的是，“灵巧指针”和“迭代器”类嵌入它所服务的类中。前面的例子可按如下重写，以在`ObjContainer`中嵌入`SmartPointer`。
+
+> 代码示例：
+[C12_09_NestedSmartPointer.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_09_NestedSmartPointer.cpp)
+
+```C++
+    // C12_09_NestedSmartPointer.cpp
+    #include <iostream>
+    #include <vector>
+    #include "../require.h"
+    using namespace std;
+
+    class Obj
+    {
+        static int i, j;
+    public:
+        void f() const {cout << i++ << endl;}
+        void g() const {cout << j++ << endl;}
+    };
+
+    // Static member definitions:
+    int Obj::i = 47;
+    int Obj::j = 11;
+
+    // Container:
+    class ObjContainer
+    {
+        vector<Obj*> a;
+    public:
+        void add(Obj* obj) {a.push_back(obj);}
+        class SmartPointer;
+        friend SmartPointer;
+        class SmartPointer
+        {
+            ObjContainer& oc;
+            unsigned int index;
+        public:
+            SmartPointer(ObjContainer& objc) : oc(objc)
+            {
+                index = 0;
+            }
+            // Return value indicates end of list:
+            bool operator++()
+            {
+                if(index >= oc.a.size()) return false;
+                if(oc.a[++index] == 0) return false;
+                return true;
+            }
+            bool operator++(int)
+            {
+                return operator++();
+            }
+            Obj* operator->() const
+            {
+                require(oc.a[index] != 0, "Zero value "
+                    "returned by SmartPointer::operator->()");
+                return oc.a[index];
+            }
+        };
+        // Function to produce a smart pointer that points to
+        // the beginning og the ObjContainer:
+        SmartPointer begin()
+        {
+            return SmartPointer(*this);
+        }
+    };
+
+    int main()
+    {
+        const int sz = 10;
+        Obj o[sz];
+        ObjContainer oc;
+        for(int i = 0; i < sz; i++)
+            oc.add(&o[i]);
+        ObjContainer::SmartPointer sp = oc.begin();    // Create an iterator
+        do{
+            sp->f();    // Pointer dereference operator call
+            sp->g();
+        }while(++sp);
+    }
+```
+
+嵌入类中后，有两点不同：首先是在类的声明中说明它是一个友元类。
+
+```C++
+    class SmartPointer;
+    friend SmartPointer;
+```
+
+编译器首先在被告知类是友元的之前，必须知道该类是存在的。
+
+第二个不同之处是在`ObjContainer`的成员函数`begin()`中，`begin()`产生一个指向`ObjContainer`序列开头的`SmartPointer`。
+
+#### 12.3.4.4 operator->*
+
+`operator->*`是一个二元运算符，其行为与所有其他二元运算符类似。它是专为模仿前一章介绍的内部数据类型的成员指针行为而提供的。
 
