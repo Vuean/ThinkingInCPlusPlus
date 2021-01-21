@@ -1031,3 +1031,204 @@
 
 `operator->*`是一个二元运算符，其行为与所有其他二元运算符类似。它是专为模仿前一章介绍的内部数据类型的成员指针行为而提供的。
 
+与`operator->*`一样，指向成员的指针间接引用运算符通常同某种代表“灵巧指针”的对象一起使用。在定义`operator->*`时要注意它**必须返回一个对象**，对于这个对象，可以用正在调用的成员函数为参数调用`operator()`。
+
+`operator()`的函数调用必须是成员函数，它是惟一的允许在它里面有任意个参数的函数。
+
+要想创建一个`operator->*`，必须首先创建带有`operator()`类，这是`operator->*`将返回对象的类。该类必须获取一些必要的信息，以使当`operator()`被调用时，指向成员的指针可以对对象进行间接引用。在下面的例子中，`FunctionObject`的构造函数得到并储存指向对象的指针和指向成员函数的指针，然后`operator()`使用这些指针进行实际指向成员的指针的调用。
+
+> 代码示例：
+[C12_10_PointerToMemberOperator.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_10_PointerToMemberOperator.cpp)
+
+```C++
+    // C12_10_PointerToMemberOperator.cpp
+    #include <iostream>
+    using namespace std;
+    class Dog
+    {
+    public:
+        int run(int i) const
+        {
+            cout << "run\n";
+            return i;
+        }
+        int eat(int i) const
+        {
+            cout << "eat\n";
+            return i;
+        }
+        int sleep(int i) const
+        {
+            cout << "ZZZ\n";
+            return i;
+        }
+        typedef int (Dog::*PMF)(int) const;
+        // operator->* must return an object that has an operator()
+        class FunctionObject
+        {
+            Dog* ptr;
+            PMF pmem;
+        public:
+            // save the object pointer and member pointer
+            FunctionObject(Dog* wp, PMF pmf)
+                : ptr(wp), pmem(pmf)
+            {
+                cout << "FunctionObject constructor\n";
+            }
+            // Make the call using the object pointer and member pointer
+            int operator()(int i) const
+            {
+                cout << "FunctionObject::operator()\n";
+                return (ptr->*pmem)(i);
+            }
+        };
+        FunctionObject operator->*(PMF pmf)
+        {
+            cout << "operator->*" << endl;
+            return FunctionObject(this, pmf);
+        }
+    };
+
+    int main()
+    {
+        Dog m;
+        Dog::PMF pmf = &Dog::run;
+        cout << (m->*pmf)(1) << endl;
+        pmf = &Dog::sleep;
+        cout << (m->*pmf)(2) << endl;
+        pmf = &Dog::eat;
+        cout << (m->*pmf)(3) << endl;
+    }
+```
+
+`Dog`有三个成员函数，它们的参数和返回类型都是`int`。`PMF`是一个`typedef`，用于简化定义一个指向`Dog`成员函数的指向成员的指针。
+
+`operator->*`创建并返回一个`FunctionObject`对象。注意`operator->*`既知道指向成员的指针所调用的对象(`this`)，又知道这个指向成员的指针，并把它们传递给存储这些值的`FunctionObject`构造函数。当`operator->*`被调用时，编译器立刻转而对`operator->*`返回的值调用`operator()`，把已经给`operator->*`的参数传递进去。`FtinctionObject::operator()`得到参数，然后使用存储的对象指针和指向成员的指针间接引用“真实的”指向成员的指针。
+
+### 12.3.5 不能重载的运算符
+
+在可用的运算符集合里存在一些不能重载的运算符。这样限制的通常原因是出于对安全的考虑：如果这些运算符也可以被重载，将会造成危害或破坏安全机制，使得事情变得困难或混淆现有的习惯。
+
+1. 成员选择`operator.`。点在类中对任何成员都有一定的意义。但如果允许它重载，就不能用普通的方法访问成员，只能用指针和指针`operator->`访问。
+2. 成员指针间接引用`operator.*`，因为与`operator.`同样的原因而不能重载。
+3. 没有求幕运算符。
+4. 不存在用户定义的运算符，即不能编写目前运算符集合中没有的运算符。
+5. 不能改变优先级规则。
+
+## 12.4 非成员运算符
+
+运算符可能是成员运算符或非成员运算符，但怎么选择呢？总体来说没有差异，它们应该是成员运算符。这样做强调了运算符和类的联合。当左侧操作数是当前类的对象时，运算符会工作得很好。
+
+但有时左侧运贷符是别的类的对象。这种情况通常出现在为输入输出流重载`operator<<`和`>>`时。
+
+> 代码示例：
+[C12_11_IostreamOperatorOverloading.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_11_IostreamOperatorOverloading.cpp)
+
+```C++
+    // C12_11_IostreamOperatorOverloading.cpp
+    // Example of non-member overloaded operators
+    #include "../require.h"
+    #include <iostream>
+    #include <sstream>
+    #include <cstring>
+    using namespace std;
+
+    class IntArray
+    {
+        enum {sz = 5};
+        int i[sz];
+    public:
+        IntArray() {memset(i, 0, sz * sizeof(*i));}
+        int& operator[] (int x)
+        {
+            require(x >= 0 && x < sz, "IntArray::operator[] out of range");
+            return i[x];
+        }
+        friend ostream& operator<<(ostream& os, const IntArray& ia);
+        friend istream& operator>>(istream& is, IntArray& ia);
+    };
+
+    ostream& operator<<(ostream& os, const IntArray& ia)
+    {
+        for(int j = 0; j < ia.sz; j++)
+        {
+            os << ia.i[j];
+            if(j != ia.sz - 1)
+                os << ", ";
+        }
+        os << endl;
+        return os;
+    }
+
+    istream& operator>>(istream& is, IntArray& ia)
+    {
+        for(int j = 0; j < ia.sz; j++)
+        {
+            is >> ia.i[j];
+        }
+        return is;
+    }
+
+    int main()
+    {
+        stringstream input("47 34 56 72 103");
+        IntArray I;
+        input >> I;
+        I[4] = -1;
+        cout << I;
+    }
+```
+
+被重载的移位运算符通过引用方式传递和返回，所以运算将影响外部对象。如`os << ia.i[j];`会使现有的重载运算函数被调用。
+
+在`main()`中，`iostream`的一种新类型被使用：`stringstream`。该类包含一个`string`（正如此处显示的，它可以由一个char数组创建）并且把它转化为一个`iostream`。这意味着在不打开一个文件或在命令行中键入数据的情况下，移位运算符可以被测试。
+
+### 12.4.1 基本方针
+
+|运算符|建议使用|
+ :----: | :-----: |  
+|所有一元运算符|成员|
+|= () [] -> ->*|必须是成员|
+|+= -= /= *= ^= \|= &= %= >>= <<=|成员|
+|所有其他二元运算符|非成员|
+
+## 12.5 重载赋值符
+
+在任何时候使用一个“=”代替普通形式的构造函数调用来初始化一个对象时，无论等号右侧是什么，编译器都会寻找一个接受右边类型的构造函数：
+
+> 代码示例：
+[C12_12_CopyingVsInitialization.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_12_CopyingVsInitialization.cpp)
+
+```C++
+    // C12_12_CopyingVsInitialization.cpp
+    class Fi
+    {
+    public:
+        Fi() {};
+    };
+
+    class Fee
+    {
+    public:
+        Fee(int){}
+        Fee(const Fi&) {}
+    };
+
+    int main()
+    {
+        Fee fee = 1;    // Fee(int)
+        Fi fi;
+        Fee fum = fi;   // Fee(Fi)
+    }
+```
+
+当处理“=”时，记住这个差别是非常重要的：**如果对象还没有被创建，初始化是需要的，否则使用赋值`operator=`**。
+
+对于初始化，使用“=”可以避免写代码。不用总是用显式的构造函数形式。等号的两种构造形式变为：
+
+```C++
+    Fee fee(1);
+    Fee fum(fi);
+```
+
+### 12.5.1 operator=的行为
