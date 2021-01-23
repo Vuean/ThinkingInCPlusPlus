@@ -1232,3 +1232,365 @@
 ```
 
 ### 12.5.1 operator=的行为
+
+在`Integer.h`和`Byte.h`中，可以看到`operator=`仅是成员函数，它密切地与“=”左侧的对象相联系。如果允许定义`operator=`为全局的，那么我们就会试图重新定义内置的"="：
+
+```C++
+    int operator=(int, MyType); // Global = not allowed!
+```
+
+编译器通过强制`operator=`为成员函数而避开这个问题。
+
+当创建一个`operator=`时，必须从右侧对象中拷贝所有需要的信息到当前的对象以完成为类的“赋值”，对于简单的对象，这是显然的：
+
+> 代码示例：
+[C12_13_SimpleAssignment.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_13_SimpleAssignment.cpp)
+
+```C++
+    // C12_13_SimpleAssignment.cpp
+    // Simple operator=()
+    #include <iostream>
+    using namespace std;
+
+    class Value
+    {
+        int a, b;
+        float c;
+    public:
+        Value(int aa = 0, int bb = 0, float cc = 0.0)
+            : a(aa), b(bb), c(cc) {}
+        Value& operator=(const Value& rv)
+        {
+            a = rv.a;
+            b = rv.b;
+            c = rv.c;
+            return *this;
+        }
+        friend ostream& operator<<(ostream& os, const Value& rv)
+        {
+            return os << "a = " << rv.a << ", b = " << rv.b
+                << ", c = " << rv.c;
+        }
+    };
+
+    int main()
+    {
+        Value a, b(1, 2, 3.3);
+        cout << "a: " << a << endl;
+        cout << "b: " << b << endl;
+        a = b;
+        cout << "a after assignment: " << a << endl;
+    }
+```
+
+这里，“=”左侧的对象拷贝了右侧对象中的所有内容，然后返回它的引用，所以还可以创建更加复杂的表达式。
+
+这个例子犯了一个常见的错误。**当准备给两个相同类型的对象赋值时，应该首先检查一下自赋值(self-assignment)**：这个对象是否对自身赋值了？在一些情况下，例如本例，无论如何执行这些赋值运算都是无害的，但如果对类的实现进行了修改，那么将会出现差异。如果
+我们习惯于不做检查，就可能忘记并产生难以发现的错误。
+
+#### 12.5.1.1 类中指针
+
+如果对象里包含指向别的对象的指针将如何？简单地拷贝一个指针意味着以指向相同的存储单元的对象而结束。这里存在两个解决方法，其一是**当做一个赋值运算或一个拷贝构造函数时，最简单的方法是拷贝这个指针所涉及的一切**。
+
+> 代码示例：
+[C12_14_CopyingWithPointers.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_14_CopyingWithPointers.cpp)
+
+```C++
+    // C12_14_CopyingWithPointers.cpp
+    // Solving the pointer aliasing problem by
+    // duplicating what is pointed to during assignment and copy-construction
+    #include "../require.h"
+    #include <string>
+    #include <iostream>
+    using namespace std;
+    class Dog
+    {
+        string nm;
+    public:
+        Dog(const string& name) : nm(name)
+        {
+            cout << "Creating Dog: " << *this << endl;
+        }
+        // Synthesized copy-constructor & operator= are correct
+        // Create a Dog from a Dog pointer:
+        Dog(const Dog* dp, const string& msg)
+            : nm(dp->nm + msg)
+        {
+            cout << "Copied dog: " << *this << " from " << *dp << endl;
+        }
+        ~Dog()
+        {
+            cout << "Deleting Dog: " << *this << endl;
+        }
+        void rename(const string& newName)
+        {
+            nm = newName;
+            cout << "Dog renamed to: " << *this << endl;
+        }
+        friend ostream& operator<<(ostream& os, const Dog& d)
+        {
+            return os << "[" << d.nm << "]";
+        }
+    };
+
+    class DogHouse
+    {
+        Dog* p;
+        string houseName;
+    public:
+        DogHouse(Dog* dog, const string& house)
+            : p(dog), houseName(house) {}
+        DogHouse(const DogHouse& dh)
+            : p(new Dog(dh.p, "copy-constructed")), 
+            houseName(dh.houseName + "copy-constructed") {}
+        DogHouse& operator=(const DogHouse& dh)
+        {
+            // Check for self-assignment
+            if(&dh != this)
+            {
+                p = new Dog(dh.p, " assigned");
+                houseName = dh.houseName + " assigned";
+            }
+            return *this;
+        }
+        void renameHouse(const string& newName)
+        {
+            houseName = newName;
+        }
+        Dog* getDog() const { return p;}
+        ~DogHouse() {delete p;}
+        friend ostream& operator<<(ostream& os, const DogHouse& dh)
+        {
+            return os << "[" << dh.houseName << "] contains" << *dh.p;
+        }
+    };
+
+    int main()
+    {
+        DogHouse fidos(new Dog("Fido"), "FidoHouse");
+        cout << fidos << endl;
+        DogHouse fidos2 = fidos;    // Copy construction
+        cout << fidos2 << endl;
+        fidos2.getDog()->rename("Spot");
+        fidos2.renameHouse("SpotHouse");
+        cout << fidos2 << endl;
+        fidos = fidos2; // Assignment
+        cout << fidos << endl;
+        fidos.getDog()->rename("Max");
+        fidos.renameHouse("MaxHouse");
+    }
+```
+
+当类中包含指针时，`DogHouse`含有一个`Dog*`并说明了需要定义的4个函数：所有必需的普通构造函数、拷贝构造函数、`operator=`（无论定义它还是不允许它）和析构函数。
+
+#### 12.5.1.2 引用计数
+
+**引用计数**(**reference counting**)。可以使一块存储单元具有智能，它知道有多少对象指向它。拷贝构造函数或赋值运算意味着把另外的指针指向现在的存储单元并增加引用记数。消除意味着减小引用记数，如果引用记数为0则意味销毁这个对象。
+
+**写拷贝**(**copy-on-write**)：在向这块存储单元写之前，应该确信没有其他人使用它。如果引用记数大于1，在写之前必须拷贝这块存储单元，这样就不会影响他人了。
+
+> 代码示例：
+[C12_15_ReferenceCounting.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_15_ReferenceCounting.cpp)
+
+```C++
+    // C12_15_ReferenceCounting.cpp
+    // Reference count, copy-on-write
+    #include "../require.h"
+    #include <string>
+    #include <iostream>
+    using namespace std;
+    class Dog
+    {
+        string nm;
+        int refcount;
+        Dog(const string& name) : nm(name), refcount(1)
+        {
+            cout << "Creating Dog: " << *this << endl;
+        }
+        // Prevent assignment
+        Dog& operator=(const Dog& rv);
+    public:
+        // Dog can only be created on the heap:
+        static Dog* make(const string& name)
+        {
+            return new Dog(name);
+        }
+        Dog(const Dog& d) : nm(d.nm + " copy"), refcount(1)
+        {
+            cout << "Dog copy-constructor: " << *this << endl;
+        }
+        ~Dog()
+        {
+            cout << "Deleting Dog: " << *this << endl;
+        }
+        void attach()
+        {
+            ++refcount;
+            cout << "Attach Dog: " << *this << endl;
+        }
+        void detach()
+        {
+            require(refcount != 0);
+            cout << "Detach Dog: " << *this << endl;
+            // Destory object if no one is using it:
+            if(--refcount == 0) delete this;
+        }
+        // Conditional copy this Dog.
+        // Call before nodifying the Dog, assign resulting pointer to your Dog*.
+        Dog* unalias()
+        {
+            cout << "Unaliasing Dog: " << *this << endl;
+            // Don't duplicate if not called:
+            if(refcount == 1) return this;
+            --refcount;
+            // Use copy-constructor to duplicate:
+            return new Dog(*this);
+        }
+        void rename(const string& newName)
+        {
+            nm = newName;
+            cout << "Dog renamed to: " << *this << endl;
+        }
+        friend ostream& operator<<(ostream& os, const Dog& d)
+        {
+            return os << "[" << d.nm << "], rc = " << d.refcount;
+        }
+    };
+
+    class DogHouse
+    {
+        Dog* p;
+        string houseName;
+    public:
+        DogHouse(Dog* dog, const string& house)
+            : p(dog), houseName(house) 
+        {
+            cout << "Created DogHouse: " << *this << endl;
+        }
+        DogHouse(const DogHouse& dh)
+            : p(dh.p), houseName("copy-constructed" + dh.houseName) 
+        {
+            p->attach();
+            cout << "DogHouse copy-constructor: " << *this << endl;
+        }
+        DogHouse& operator=(const DogHouse& dh)
+        {
+            // Check for self-assignment
+            if(&dh != this)
+            {
+                houseName = dh.houseName + " assigned";
+                // Clean up what you're using first:
+                p->detach();
+                p = dh.p;   // like copy-constructor
+                p->attach();
+            }
+            cout << "DogHouse operator= : " << *this << endl;
+            return *this;
+        }
+        // Decrement refcount, conditionally destory
+        ~DogHouse()
+        {
+            cout << "DogHouse Destructors: " << *this << endl;
+            p->detach();
+        }
+        void renameHouse(const string& newName)
+        {
+            houseName = newName;
+        }
+        void unalias() {p->unalias();}
+        // Copy-on-write. Anytime you modify the contents of the pointer 
+        // you must first unalias it:
+        void renameDog(const string& newName)
+        {
+            unalias();
+            p->rename(newName);
+        }
+        // .. or when you allow someone else access:
+        Dog* getDog() 
+        { 
+            unalias();
+            return p;
+        }
+        
+        friend ostream& operator<<(ostream& os, const DogHouse& dh)
+        {
+            return os << "[" << dh.houseName << "] contains" << *dh.p;
+        }
+    };
+
+    int main()
+    {
+        DogHouse fidos(Dog::make("Fido"), "FidoHouse"),
+                spots(Dog::make("Spot"), "SpotHouse");
+        cout << "Entering copy-construction" << endl;
+        DogHouse bobs(fidos);
+        cout << "After copy-constructing bobs:" << endl;
+        cout << "fidos: " << fidos << endl;
+        cout << "spots: " << spots << endl;
+        cout << "bobs: " << bobs << endl;
+        cout << "Entering spots = fidos" << endl;
+        spots = fidos;
+        cout << "After spots = fidos" << endl;
+        cout << "spots: " << spots << endl;
+        cout << "Entering self-assignment" << endl;
+        bobs = bobs;
+        cout << "After self-assignment" << endl;
+        cout << "bobs: " << bobs << endl;
+        // Comment out the following lines:
+        cout << "Entering rename(\"Bob\") " << endl;
+        bobs.getDog()->rename("Bob");
+        cout << "After rename(\"Bob\") " << endl;
+    }
+```
+
+类`Dog`是`DogHouse`指向的对象。包含了一个引用记数及控制和读引用记数的函数。同时这里存在一个拷贝构造函数，所以可以从现有的对象创建一个新的`Dog`。
+
+函数`attach()`增加一个`Dog`的引用记数用以指示有另一个对象使用它。函数`detach()`减少引用记数。如果引用记数为0，则说明没有对象使用它，所以通过表达式`delete this`，成员函数销毁它自己的对象。
+
+在进行任何修改（例如为一个`Dog`重命名）之前，必须保证所修改的`Dog`没有被别的对象正在使用。这可以通过调用`DogHouse::unalias()`，它又进而调用`Dog::unalias()`来做到这点。如果引用记数为1（意味着没有别的对象指向这块存储单元），后面这个函数将返回存在的`Dog`指针，但如果引用记数大于1（意味着不只一个对象指向这个`Dog`)就要复制这个`Dog`。
+
+`operator=`处理等号左侧己创建的对象，所以它首先必须通过为`Dog`调用`detach()`来整理这个存储单元。
+
+`operator=`处理等号左侧己创建的对象，所以它首先必须通过为`Dog`调用`detach()`来整理这个存储单元。如果没有其他对象使用它，这个老的`Dog`将被销毁。然后`operator=`重复拷贝构造函数的行为。
+
+#### 12.5.1.3 自动创建operator=
+
+如果没有创建`type::operator=(type)`，编译器将自动创建一个。这个运算符行为模仿自动创建的拷贝构造函数的行为：如果类包含对象（或是从别的类继承的），对于这些对象，`operator=`被递归调用。这被称为**成员赋值**(**memberwise assignment**)。见如下例子：
+
+> 代码示例：
+[C12_16_AutomaticOperatorEqual.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_16_AutomaticOperatorEqual.cpp)
+
+```C++
+    // C12_16_AutomaticOperatorEqual.cpp
+    #include <iostream>
+    using namespace std;
+    class Cargo
+    {
+    public:
+        Cargo& operator=(const Cargo&)
+        {
+            cout << "inside Cargo::operator=()" << endl;
+            return *this;
+        }
+    };
+
+    class Truck
+    {
+        Cargo n;
+    };
+
+    int main()
+    {
+        Truck a, b;
+        a = b;
+    }
+```
+
+为`Truck`自动生成的`operator=`调用`Cargo::operator=`。
+
+## 12.6 自动类型转换
+
+在C和C++中，如果编译器看到一个表达式或函数调用使用了一个不合适的类型，它经常会执行一个自动类型转换，从现在的类型到所要求的类型。在C++中，可以通过定义自动类型转换函数来为用户定义类型达到相同效果。这些函数有两种类型：**特殊类型的构造函数**和**重载的运算符**。
+
+### 12.6.1 构造函数转换
+
