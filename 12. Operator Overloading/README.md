@@ -1746,11 +1746,178 @@
 
 ### 12.6.3 类型转换例子
 
-本例中的自动类型转换对于任一含有字符串的类是非常有帮助的。如果不用自动类型转换就想从标准的C库函数中使用所有的字符串函数，那么就得为每一个函数写一个相应的成员函数，就像下面的例子：
+本例中的自动类型转换对于任一含有字符串的类是非常有帮助的。**如果不用自动类型转换就想从标准的C库函数中使用所有的字符串函数，那么就得为每一个函数写一个相应的成员函数**，就像下面的例子：
 
 > 代码示例：
 [C12_21_Strings1.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_21_Strings1.cpp)
 
 ```C++
+    // C12_21_Strings1.cpp
+    // No auto tupe conversion
+    #include "../require.h"
+    #include <cstring>
+    #include <cstdlib>
+    #include <string>
+    using namespace std;
 
+    class Stringc
+    {
+        string s;
+    public:
+        Stringc(const string& str = "") : s(str) {}
+        int strcmp(const Stringc& S) const
+        {
+            return ::strcmp(s.c_str(), S.s.c_str());
+        }
+    };
+
+    int main()
+    {
+        Stringc s1("hello"), s2("there");
+        s1.strcmp(s2);
+    }
 ```
+
+这里只写了一个`strcmp()`函数，但必须为可能需要的`<cstring>`中的每一个写一个相应的函数。幸运的是，可以提供一个允许访问`<cstring>`中所有函数的自动类型转换：
+
+> 代码示例：
+[C12_22_Strings2.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_22_Strings2.cpp)
+
+```C++
+    // C12_22_Strings2.cpp
+    // With auto type conversion
+    #include "../require.h"
+    #include <cstring>
+    #include <cstdlib>
+    #include <string>
+    using namespace std;
+
+    class Stringc
+    {
+        string s;
+    public:
+        Stringc(const string& str = "") : s(str) {}
+        operator const char*() const 
+        {
+            return s.c_str();
+        }
+    };
+
+    int main()
+    {
+        Stringc s1("hello"), s2("there");
+        strcmp(s1, s2); // Standard C function
+        strspn(s1, s2); // Any string function!
+    }
+```
+
+因为编译器知道如何从`Stringc`转换到`char*`，所以现在任何一个接受`char*`参数的函数也可以接受`Stringc`参数。
+
+### 12.6.4 自动类型转换的缺陷
+
+因为编译器必须选择如何执行类型转换，所以如果没有正确地设计出转换，编译器会产生麻烦。类`X`可以用`operator Y()`将它本身转换到类`Y`，这是一个简单且明显的情况。如果类`Y`有一个单个参数为`X`的构造函数，这也表示同样的类型转换。现在编译器有两个从`X`到`Y`的转换方法，所以当发生转换时，编译器会产生一个不明确指示的出错信息：
+
+> 代码示例：
+[C12_23_TypeConversionAmbiguity.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_23_TypeConversionAmbiguity.cpp)
+
+```C++
+    // C12_23_TypeConversionAmbiguity.cpp
+    class Orange;   // Class declaration
+
+    class Apple
+    {
+    public:
+        operator Orange() const;    // Convert Apple to Orange
+    };
+
+    class Orange
+    {
+    public:
+        Orange(Apple);  // Convert Apple to Orange
+    };
+
+    void f(Orange) {}
+
+    int main()
+    {
+        Apple a;
+        // 应用多个用户定义的从 "Apple" 到 "Orange" 的转换
+        // f(a);   // Error: ambiguous conversion
+    }
+```
+
+这个问题的解决方法是不要那样做，而是仅提供单一的从一个类型到另一个类型的自动转换方法。
+
+当提供了转换到不止一种类型的自动转换时，会发生一个引起出错的更困难的问题。有时，这个问题被称为**扇出**(**fan-out**)。
+
+> 代码示例：
+[C12_24_TypeConversionFanout.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_24_TypeConversionFanout.cpp)
+
+```C++
+    // C12_24_TypeConversionFanout.cpp
+    class Orange {};
+    class Pear {};
+
+    class Apple 
+    {
+    public:
+        operator Orange() const;
+        operator Pear() const;
+    };
+
+    // Overloaded eat();
+    void eat(Orange);
+    void eat(Pear);
+
+    int main()
+    {
+        Apple(c);
+        // 有多个 重载函数 "eat" 实例与参数列表匹配:
+        // eat(c); // Error: Apple->Orange or Apple->Pear？？？
+    }
+```
+
+类`Apple`有向`Orange`和`Pear`的自动转换。这样存在一个隐藏的缺陷：使用了创建的两种版本的重载运算符`eat()`时就出现问题了。
+
+通常，对于自动类型的解决方法是**只提供一个从某类型向另一个类型转换的自动转换版本**。当然也可以有多个向其他类型的转换，但它们不应该是自动转换，而应该用如`makeA()`和`makeB()`这样的名字来创建显式的函数调用。
+
+#### 12.6.4.1 隐藏的行为
+
+自动类型转换会引入比所希望的更多的潜在行为。下面要费点力去理解了，看看CopyingVsInitialization.cpp修改后的例子：
+
+> 代码示例：
+[C12_25_TypeConversionFanout2.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_25_TypeConversionFanout2.cpp)
+
+```C++
+    // C12_25_TypeConversionFanout2.cpp
+    class Fi {};
+
+    class Fee
+    {
+    public:
+        Fee(int){}
+        Fee(const Fi&) {}
+    };
+
+    class Fo
+    {
+        int i;
+    public:
+        Fo(int x = 0) : i(x) {}
+        operator Fee() const {return Fee(i);}
+    };
+
+    int main()
+    {
+        Fo fo;
+        Fee fee = fo;
+    }
+```
+
+这里没有从`Fo`对象创建`Fee fee`的构造函数。然而，`Fo`有一个到`Fee`的自动类型转换。这里也没有从`Fee`对象创建Fee的拷贝构造函数，但这是一种能由编译器帮助我们创建的特殊函数之一（默认的构造函数、拷贝构造函数、operator=和析构函数可自动创建）。
+
+对于`Fee fee = fo;`自动类型转换运算符被调用并创建一个拷贝函数。
+
+## 12.7 小结、
+
+如果运算符重载对于类的设计者或类的使用者不能提供特别显著的益处，则最好不要使用，因为增加运算符重载会使问题混淆。

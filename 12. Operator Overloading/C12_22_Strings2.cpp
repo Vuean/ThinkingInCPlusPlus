@@ -1,5 +1,5 @@
-// C12_21_Strings1.cpp
-// No auto tupe conversion
+// C12_22_Strings2.cpp
+// With auto type conversion
 #include "../require.h"
 #include <cstring>
 #include <cstdlib>
@@ -11,14 +11,15 @@ class Stringc
     string s;
 public:
     Stringc(const string& str = "") : s(str) {}
-    int strcmp(const Stringc& S) const
+    operator const char*() const 
     {
-        return ::strcmp(s.c_str(), S.s.c_str());
+        return s.c_str();
     }
 };
 
 int main()
 {
     Stringc s1("hello"), s2("there");
-    s1.strcmp(s2);
+    strcmp(s1, s2); // Standard C function
+    strspn(s1, s2); // Any string function!
 }
