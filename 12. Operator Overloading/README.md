@@ -1594,3 +1594,163 @@
 
 ### 12.6.1 构造函数转换
 
+如果定义一个构造函数，这个构造函数能把另一类型对象（或引用） 作为它的单个参数，那么这个构造函数允许编译器执行自动类型转换：
+
+> 代码示例：
+[C12_17_AutomaticTypeConversion.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_17_AutomaticTypeConversion.cpp)
+
+```C++
+    // C12_17_AutomaticTypeConversion.cpp
+    // Type conversion constructor
+    class One
+    {
+    public:
+        One() {}
+    };
+
+    class Two
+    {
+    public:
+        Two(const One&) {}
+    };
+
+    void f(Two) {}
+
+    int main()
+    {
+        One one;
+        f(one); // Want a Two, has a One
+    }
+```
+
+当编译器看到`f()`以类One的对象为参数调用时，编译器检查`f()`的声明并注意到它需要一个类Two的对象作为参数。然后，编译器检查是否有从对象One到Two的方法。它发现了构造函数`Two::Two(One)`，`Two::Two(One)`被悄悄地调用，结果对象Two被传递给`f()`。
+
+在这种情况下，自动类型转换避免了定义两个`f()`重载版本的麻烦。然而，代价是调用Two的隐藏构造函数，如果关心`f()`的调用效率的话，那就不要使用这种方法。
+
+#### 12.6.1.1 阻止构造函数转换
+
+有时通过构造函数自动转换类型可能出现问题。为了避开这个麻烦，可以通过在前面加关键字`explicit`（只能用于构造函数）来对上例类Two的构造函数进行修改：
+
+> 代码示例：
+[C12_18_ExplicitKeyword.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_18_ExplicitKeyword.cpp)
+
+```C++
+    // C12_18_ExplicitKeyword.cpp
+    // Using the "explicit" keyword
+    class One
+    {
+    public:
+        One(){}
+    };
+
+    class Two
+    {
+    public:
+        explicit Two(const One&){}
+    };
+
+    void f(Two) {}
+
+    int main()
+    {
+        One one;
+        // f(one); // No auto conversion allowed
+        f(Two(one));
+    }
+```
+
+通过使类Two的构造函数显式化，上面代码`f(Two(One))`创建一个从类型One到Two的临时对象。
+
+### 12.6.2 运算符转换
+
+**第二种自动类型转换的方法是通过运算符重载**。可以创建一个成员函数，这个函数通过在关键字`operator`后**跟随想要转换到的类型的方法**，将当前类型转换为希望的类型。这种形式的运算符重载是独特的，因为**没有指定一个返回类型**————**返回类型就是正在重载的运算符的名字**。下面是一个例子：
+
+> 代码示例：
+[C12_19_OperatorOverloadingConversion.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_19_OperatorOverloadingConversion.cpp)
+
+```C++
+    // C12_19_OperatorOverloadingConversion.cpp
+    class Three
+    {
+        int i;
+    public:
+        Three(int ii = 0, int = 0) : i(ii) {}
+    };
+
+    class Four
+    {
+        int x;
+    public:
+        Four(int xx) : x(xx) {}
+        operator Three() const { return Three(x);}
+    };
+
+    void g(Three){}
+
+    int main()
+    {
+        Four four(1);
+        g(four);
+        g(1);   // Calls Three(1, 0)
+    }
+```
+
+用构造函数技术，目的类执行转换。然而使用运算符技术，是源类执行转换。然而，创建一个单一参数的构造函数总是需要定义一个自动类型转换。另外，使用构造函数技术没有办法实现从用户定义类型向内置类型转换，这只有运算符重载可能做到。
+
+#### 12.6.2.1 反身性
+
+使用全局重载运算符而不用成员运算符的最便利的原因之一是在全局版本中的自动类型转换可以针对左右任一操作数，而成员版本必须保证左侧操作数已处千正确的形式。如果想两个操作数都被转换，全局版本可以节省很多代码。下面有一个小例子：
+
+> 代码示例：
+[C12_20_ReflexivityInOverloading.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_20_ReflexivityInOverloading.cpp)
+
+```C++
+    // C12_20_ReflexivityInOverloading.cpp
+    class Number
+    {
+        int i;
+    public:
+        Number(int ii = 0) : i(ii) {}
+        const Number operator+(const Number& n) const
+        {
+            return Number(i + n.i);
+        }
+        friend const Number operator-(const Number&, const Number&);
+    };
+
+    const Number operator-(const Number& n1, const Number& n2)
+    {
+        return Number(n1.i - n2.i);
+    }
+
+    int main()
+    {
+        Number a(47), b(11);
+        a + b;  // OK
+        a + 1;  // 2nd arg converted to Number
+        // 1 + a;  // Wrong, 1st arg not of type Number
+
+        a - b;  // OK
+        a - a;  // 2nd arg converted to Number
+        1 - a;  // 1st arg converted to Number
+    }
+```
+
+类`Number`有一个成员`operator+`和一个`friend operator-`。**因为有一个使用单一int参数的构造函数，在正确条件下，int可以自动转换为`Number`**。但当编译器看到一个`int`、一个+号和一个`Number`时，它就不知道如何去做，因为它所拥有的是`Number::operator+`，需要左侧的操作数是`Number`对象。因此，编译器发出一个出错信息。
+
+对于`friend operator-`，情况就不同了。编译器需要填满两个参数，它不是限定`Number`作为左侧参数。因此，对于表达式`1 - a`，编译器就是用构造函数将第一个参数转换为`Number`。
+
+有时也许想通过把它们设成成员函数来限定运算符的使用。例如当用一个矢量与矩阵相乘，矢量必须在右侧。但如果想让运算符转换任一个参数，就要使运算符为友元函数。
+
+同时，编译器不会把表达式`1 - 1`的两个参数转换为`Number`对象。。编译器首先匹配“最简单的”可能性，对于表达式`1-1`将优先使用内置运算符。
+
+### 12.6.3 类型转换例子
+
+本例中的自动类型转换对于任一含有字符串的类是非常有帮助的。如果不用自动类型转换就想从标准的C库函数中使用所有的字符串函数，那么就得为每一个函数写一个相应的成员函数，就像下面的例子：
+
+> 代码示例：
+[C12_21_Strings1.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/12.%20Operator%20Overloading/C12_21_Strings1.cpp)
+
+```C++
+
+```
