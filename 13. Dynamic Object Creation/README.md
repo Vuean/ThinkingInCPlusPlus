@@ -34,7 +34,7 @@ C+＋强迫这样做是因为未初始化的对象是程序出错的主要原因
 为了在运行时动态分配内存，C在它的标准库函数中提供了一些函数：从堆中申请内存的函数`malloc()`以及它的变种`calloc()`和`realloc()`、释放内存返回给堆的函数`free()`。为了使用C的动态内存分配函数在堆上创建一个类的实例，我们必须这样做：
 
 > 代码示例：
-[C13_01_MallocClass.cpp]()
+[C13_01_MallocClass.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/13.%20Dynamic%20Object%20Creation/C13_01_MallocClass.cpp)
 
 ```C++
     // C13_01_MallocClass.cpp
@@ -91,3 +91,115 @@ C++中的解决方案是把创建一个对象所需的所有动作都结合在�
 
 ### 13.1.3 operator delete
 
+`new`表达式的反面是`delete`表达式。`delete`表达式首先调用析构函数，然后释放内存。`delete`只用于删除由`new`创建的对象，为了避免一个对象删除两次而带来的问题，通常建议再删除指针后理级将指针赋值为0（空指针）。
+
+### 13.1.4 一个简单的例子
+
+> 代码示例：
+[C13_02_Tree.h](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/13.%20Dynamic%20Object%20Creation/C13_02_Tree.h)
+
+```C++
+    // C13_02_Tree.h
+    #ifndef TREE_H
+    #define TREE_H
+    #include <iostream>
+
+    class Tree
+    {
+        int height;
+    public:
+        Tree(int treeHeight) : height(treeHeight) {}
+        ~Tree() {std::cout << "~Tree() delete t";}
+        friend std::ostream& operator<<(std::ostream& os, const Tree* t)
+        {
+            return os << "Tree height is: " << t->height << std::endl;
+        }
+    };
+    #endif // TREE_H
+```
+
+> 代码示例：
+[C13_02_Tree.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/13.%20Dynamic%20Object%20Creation/C13_02_Tree.cpp)
+
+```C++
+    // C13_02_Tree.cpp
+    // Simple demo of new & delete
+    #include "C13_02_Tree.h"
+    using namespace std;
+
+    int main()
+    {
+        Tree* t = new Tree(40);
+        cout << t;
+        delete t;
+    }
+```
+
+### 13.1.5 内存管理的开销
+
+当在堆栈里自动创建对象时，对象的大小和它们的生存期被准确地内置在生成的代码里，这是因为编译器知道确切的类型、数量和范围。而**在堆里创建对象还包括另外的时间和空间的开销**。
+
+## 13.2 重新设计前面的例子
+
+使用`new`和`delete`，对于本书前面介绍的`Stash`例子。
+
+### 13.2.1 使用delete void*可能出错
+
+如果想对一个`void*`类型指针进行`delete`操作，要注意这将可能成为一个程序错误，除非指针所指的内容是非常简单的，因为，它将不执行析构函数。下面的例子将显示发生的情况：
+
+> 代码示例：
+[C13_03_BadVoidPointerDeletion.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/13.%20Dynamic%20Object%20Creation/C13_03_BadVoidPointerDeletion.cpp)
+
+```C++
+// C13_03_BadVoidPointerDeletion.cpp
+// Deleting void pointers can cause memory leaks
+    #include <iostream>
+    using namespace std;
+
+    class Object
+    {
+        void* data; // some storage
+        const int size;
+        const char id;
+    public:
+        Object(int sz, char c) : size(sz), id(c)
+        {
+            data = new char[size];
+            cout << "constructing object" << id 
+                << ", size = " << size << endl;
+        }
+        ~Object()
+        {
+            cout << "Destructing object" << id << endl;
+            delete []data;  // OK just release storage
+            // no destructor calls are necessary
+        }
+    };
+
+    int main()
+    {
+        Object* a = new Object(40, 'a');
+        delete a;
+        void* b = new Object(40, 'b');
+        delete b;
+    }
+```
+
+类`Object`包含了一个`void*`指针，它被初始化指向“元”数据（它没有指向含有析构函数的对象）。在`Object`的析构函数中，对这个`void*`指针调用`delete`并不会发生什么错误，因为所需要的仅是释放这块内存。
+
+因为`delete a`知道`a`指向一个`Object`对象，所以析构函数将会被调用，从而释放了分配给`data`的内存。但是，正如在进行`delete b`的操作中，如果通过`void*`类型的指针对一个对象进行操作，则只会释放`Object`对象的内存，而不会调用析构函数，也就不会释放`data`所指向的内存。
+
+### 13.2.2 对指针的清除责任
+
+解决内存泄漏的另一个工作在于确保对容器中的每一个对象调用`delete`。如果把指向在栈上创建的对象的指针和指向在堆上创建的对象的指针都存放在同一个容器中，将会发生严重的间题。
+
+### 13.2.3 指针的Stash
+
+`Stash`的新版本称为`PStash`，它含有在堆中本来就存在的对象的指针。使用`new`和`delete`，控制指向在堆中创建的对象的指针就变得安全、容易了。
+
+> 代码示例：
+[C13_04_PStash.h](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/13.%20Dynamic%20Object%20Creation/C13_04_PStash.h)
+
+```C++
+
+```
