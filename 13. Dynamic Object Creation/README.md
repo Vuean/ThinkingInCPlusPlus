@@ -201,5 +201,39 @@ C++中的解决方案是把创建一个对象所需的所有动作都结合在�
 [C13_04_PStash.h](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/13.%20Dynamic%20Object%20Creation/C13_04_PStash.h)
 
 ```C++
+    // C13_04_PStash.h
+    #ifndef PSTASH_H
+    #define PSTASH_H
+
+    class PStash
+    {
+        int quantity;   // Number of storage spaces
+        int next;       // Next empty space
+        // Pointer storage
+        void** storage; 
+        void inflate(int increase);
+    public:
+        PStash() : quantity(0), storage(0), next(0) {}
+        ~PStash();
+        int add(void* element);
+        void* operator[](int index) const;
+        // Remove the reference from this PStash:
+        void* remove(int index);
+        // Number of elements in Stash:
+        int count() const {return next;}
+    };
+    #endif //PSTASH_H
+```
+
+基本的数据成分是非常相似的，但现在`storage`是一个`void`指针数组，并且用`new`代替`malloc()`为这个数组分配内存。
+
+对象的类型是`void*`，所以这个表达式表示分配了一个`void`指针的数组。析构函数删除`void`指针本身，而不是试图删除它们所指向的内容。
+
+其他方面的变化是用`operator[]`代替了函数`fetch()`，这在语句构成上显得更有意义。因为返回一个`void*`指针，所以用户必须记住在容器内存储的是什么类型，在取回它们时要对这些指针进行类型转换。
+
+> 代码示例：
+[C13_04_PStash.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/13.%20Dynamic%20Object%20Creation/C13_04_PStash.cpp)
+
+```C++
 
 ```
