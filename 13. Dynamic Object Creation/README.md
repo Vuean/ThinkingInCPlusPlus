@@ -235,5 +235,124 @@ C++中的解决方案是把创建一个对象所需的所有动作都结合在�
 [C13_04_PStash.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/13.%20Dynamic%20Object%20Creation/C13_04_PStash.cpp)
 
 ```C++
+    // C13_04_PStash.cpp
+    // Pointer Stash definitions
+    #include "C13_04_PStash.h"
+    #include "../require.h"
+    #include <iostream>
+    #include <cstring>
+    using namespace std;
 
+    int PStash:: add(void* element)
+    {
+        const int inflateSize = 10;
+        if(next >= quantity)
+            inflate(inflateSize);
+        storage[next++] = element;
+        return (next - 1);
+    }
+
+    // No ownership:
+    PStash::~PStash()
+    {
+        for(int i = 0; i < next; i++)
+        {
+            require(storage[i] == 0, "PStash not cleaned up");
+            delete []storage;
+        }
+    }
+
+    // Operator overloading replacement for fetch
+    void* PStash::operator[](int index) const
+    {
+        require(index >= 0, "PStash::operator[] index negative");
+        if(index >= next)
+            return  0;
+        return storage[index];
+    }
+
+    void* PStash::remove(int index)
+    {
+        void* v = operator[](index);
+        if(v != 0) storage[index] = 0;
+        return v;
+    }
+
+    void PStash::inflate(int increase)
+    {
+        const int psz = sizeof(void*);
+        void** st = new void*[quantity + increase];
+        memset(st, 0, (quantity + increase) * psz);
+        memcpy(st, storage, quantity * psz);
+        quantity += increase;
+        delete []storage;
+        storage = st;
+    }
 ```
+
+`inflate()`的代码被修改为能处理`void*`指针数组的存储，而不是先前的设计，只处理元比特。
+
+## 13.3 用于数组的new和delete
+
+在栈或堆上创建一个对象数组是同样容易的。当然，应当为数组里的每一个对象调用构造函数。但这里有一个限制条件：由于不带参数的构造函数必须被每一个对象调用，所以除了在栈上整体初始化（见第6章）外还必须有一个默认的构造函数。
+
+当使用`new`在堆上创建对象数组时，还必须多做一些操作。下面是一个创建对象数组的例子：`MyType* fp = new MyType[100];`。这样就在堆上为100个`MyType`对象分配了足够的内存并为每一个对象调用了构造函数。但是现在仅拥有一个`MyType*`。这和用下面的表达式创建单个对象得到的结果是一样的：`MyType* fp2 = new MyType;`因为这是我们写的代码，所以我们知道`fp`实际上是一个数组的起始地址。
+
+在销毁数组时，`delete fp2; // OK`和`delete fp; // Not the desire effect`，两个语句看起来一样，但效果却不同。对于`fp`，还有99个析构函数没有调用。因此需要使用`delete []fp;`。
+
+空的方括号告诉编译器产生代码，该代码的任务是将从数组创建时存放在某处的对象数量取回，并为数组的所有对象调用析构函数。
+
+### 13.3.1 使指针更像数组
+
+作为题外话，上面定义的`fp`可以被修改指向任何类型，但这对于一个数组的起始地址来讲没有什么意义。**一般讲来，把它定义为常量会更好些，因为这样任何修改指针的企图都会被认为出错**。比如可以定义为：`int const* q = new int[100];`或`const int* q = new int[100];`。
+
+上面的这两种表达式都把const和被指针指向的int捆绑在一起，而不是指针本身。
+
+如果`int* const q = new int[10];`这样定义，则现在q中的数组元素可以被修改了，但对q本身的修改(例如`q++`)是不合法的，因为它是一个普通数组标识符。
+
+## 13.4 耗尽内存
+
+当`operator new()`找不到足够大的连续内存块来安排对象时，一个
+称为`new-handler`的特殊函数将会被调用。首先，检查指向函数的指针，如果指针非0，那么它指向的函数将被调用。
+
+`new-handler`的默认动作是产生一个**异常**(**throw an exception**)。
+
+通过包含`new.h`来替换`new-handler`，然后以想装入的函数地址为参数调用`set_new_handler()`函数。
+
+> 代码示例：
+[C13_05_NewHandler.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/13.%20Dynamic%20Object%20Creation/C13_05_NewHandler.cpp)
+
+```C++
+    // C13_05_NewHandler.cpp
+    // Changing the new-handler
+
+    #include <iostream>
+    #include <cstdlib>
+    #include <new>
+    using namespace std;
+
+    int Count = 0;
+
+    void out_of_memory()
+    {
+        cerr << "memory exhausted after" << Count
+            << " allocations!" << endl;
+        exit(1);
+    }
+
+    int main()
+    {
+        set_new_handler(out_of_memory);
+        while(1)
+        {
+            Count++;
+            new int[1000];
+        }
+    }
+```
+
+`new-handler`函数必须不带参数且其返回值为`void`。`while`循环将持续分配int对象（并丢掉它们的返回地址）直到空的内存被耗尽。在紧接下去的下一次对`new`的调用时，将没有内存可被调用，所以调用`new-handler`。
+
+## 13.5 重载new和delete
+
+当我们创建一个`new`表达式时，首先会使用`operator new()`分配内存，然后调用构造函数。在`delete`表达式里，调用了析构函数，然后使用`operator delete()`释放内存。
