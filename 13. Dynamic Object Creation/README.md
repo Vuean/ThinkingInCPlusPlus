@@ -356,3 +356,220 @@ C++中的解决方案是把创建一个对象所需的所有动作都结合在�
 ## 13.5 重载new和delete
 
 当我们创建一个`new`表达式时，首先会使用`operator new()`分配内存，然后调用构造函数。在`delete`表达式里，调用了析构函数，然后使用`operator delete()`释放内存。
+
+在特殊的情形下，`new`和`delete`并不能满足需要。最常见的改变分配系统的原因是出于效率考虑：也许要创建和销毁一个特定的类的非常多的对象以至于这个运算变成了速度的瓶颈。
+
+另一个问题是堆碎片：分配不同大小的内存可能会在堆上产生很多碎片，以至于很快用完内存。
+
+当重载`operator new()`和`operator delete()`时，我们只是改变了原有的内存分配方法，记住这一点是很重要的。
+
+### 13.5.1 重载全局new和delete
+
+重载的`new`必须有一个`size_t`参数。这个参数由编译器产生并传递给
+我们，它是要分配内存的对象的长度。必须返回一个指向等于这个长度（或大于这个长度，如果有这样做的原因）的对象的指针，如果没有找到存储单元（在这种情况下，构造函数不被调用），则返回一个0。然而如果找不到存储单元，不能仅仅返回0，也许还应该做一些诸如调用`new-handler`或产生一个异常信息之类的事，通知这里存在问题。
+
+`operator new()`的返回值是一个`void*`，而不是指向任何特定类型的指针。所做的是分配内存，而不是完成一个对象建立一直到构造函数调用了才完成对象的创建，它是编译器确保做的动作，不在我们的控制范围之内。
+
+`operator delete()`的参数是一个指向由`operator new()`分配的内存的`void*`。参数是一个`void*`是因为它是在调用析构函数后得到的指针。析构函数从存储单元里移去对象。`operator delete()`的返回类型是`void`。
+
+> 代码示例：
+[C13_06_GlobalOperatorNew.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/13.%20Dynamic%20Object%20Creation/C13_06_GlobalOperatorNew.cpp)
+
+```C++
+    // C13_06_GlobalOperatorNew.cpp
+    // Overload global new/operator
+
+    #include <cstdio>
+    #include <cstdlib>
+    using namespace std;
+
+    void* operator new(size_t sz)
+    {
+        printf("operator new: %d Bytes\n", sz);
+        void* m = malloc(sz);
+        if(!m) puts("out of memory");
+        return m;
+    }
+
+    void operator delete(void* m)
+    {
+        puts("operator delete");
+        free(m);
+    }
+
+    class S
+    {
+        int i[100];
+    public:
+        S() {puts("S::S()");}
+        ~S() {puts("S::~S()");}
+    };
+
+    int main()
+    {
+        puts("creating & destorying an int");
+        int* p = new int(47);
+        delete p;
+        puts("creating destorying an s");
+        S* s = new S;
+        delete s;
+        puts("creating & destorying S[3]");
+        S* sa = new S[3];
+        delete []sa;
+    }
+```
+
+注意，这里使用`printf()`和`puts()`而不是`iostreams`。因此，当创建了一个`iostream`对象时（像全局的`cin`、`cout`和`cerr`），它们调用`new`去分配内存。用`printf()`不会进入死锁状态，因为它不调用`new`来初始化本身。
+
+### 13.5.2 对于一个类重载new和delete
+
+为一个类重载`new`和`delete`时，尽管不必显式地使用`static`，但实际上仍是在创建`static`成员函数。
+
+在下面的例子里为类`Framis`创建了一个非常简单的内存分配系统。程序开始时在静态数据区域留出一块存储单元。这块内存被用来为`Framis`类型的对象分配存储空间。为了标明哪块存储单元已被使用，这里使用了一个字节(`byte`)数组，一个字节代表一块存储单元。
+
+> 代码示例：
+[C13_07_Framis.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/13.%20Dynamic%20Object%20Creation/C13_07_Framis.cpp)
+
+```C++
+    // C13_07_Framis.cpp
+    // Local overload new & delete
+
+    #include <cstddef>
+    #include <fstream>
+    #include <iostream>
+    #include <new>
+    using namespace std;
+    ofstream out("Framis.out");
+
+    class Framis
+    {
+        enum {sz = 10};
+        char c[sz]; // To take up space, not used
+        static unsigned char pool[];
+        static bool alloc_map[];
+    public:
+        enum { psize = 100 };   // framis allowed
+        Framis() {out << "Framis()\n"; }
+        ~Framis() {out << "~Framis()\n"; }
+        void* operator new(size_t) throw(bad_alloc);
+        void operator delete(void*);
+    };
+
+    unsigned char Framis::pool[psize* sizeof(Framis)];
+    bool Framis::alloc_map[psize] = {false};
+
+    void* Framis::operator new(size_t) throw(bad_alloc)
+    {
+        for(int i = 0; i < psize; i++)
+        {
+            if(!alloc_map[i])
+            {
+                out << "using block " << i << " ... ";
+                alloc_map[i] = true;
+                return pool + (i * sizeof(Framis));
+            }
+            out << "out of memory" << endl;
+            throw bad_alloc();
+        }
+    }
+
+    void Framis::operator delete(void* m)
+    {
+        if(!m) return;
+        unsigned long block = (unsigned long)m - (unsigned long)pool;
+        block /= sizeof(Framis);
+        out << "freeing block " << block << endl;
+        alloc_map[block] = false;
+    }
+
+    int main()
+    {
+        Framis* f[Framis::psize];
+        try
+        {
+            for(int i = 0; i < Framis::psize; i++)
+                f[i] = new Framis;
+            new Framis;
+        } catch(bad_alloc){
+            cerr << "Out of memory" << endl;
+        }
+        delete f[10];
+        f[10] = 0;
+        Framis* x = new Framis;
+        delete x;
+        for(int j = 0; j < Framis::psize; j++)
+            delete f[j];
+    }
+```
+
+局部`operator new()`和全局`operator new()`具有相同的语法。首先对分配表进行搜索，寻找值为`false`的成员。找到后将该成员设置为`ture`，以此声明对应的存储单元已经被分配了，并且返回这个存储单元的地址。如果找不到任何空闲内存，将会给跟踪文件发送一个消息，并且
+产生一个`bad_alloc`类型的异常信息。
+
+### 13.5.3 为数组重载new和delete
+
+如果为一个类重载了`operator new()`和`operator delete()`，那么无论何时创建这个类的一个对象都将调用这些运算符。但如果要创建这个类的一个对象数组时，全局`operator new()`就会被立即调用，用来为这个数组分配足够的内存。对此，可以通过为这个类重载运算符的数组版本，即`operator new[]`和`operator delete[]`，来控制对象数组的内存分配。
+
+> 代码示例：
+[C13_08_ArrayOperatorNew.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/13.%20Dynamic%20Object%20Creation/C13_08_ArrayOperatorNew.cpp)
+
+```C++
+    // C13_08_ArrayOperatorNew.cpp
+    // operator new for arrays
+
+    #include <new>
+    #include <fstream>
+    using namespace std;
+    ofstream trace("ArrayOperatorNew.out");
+
+    class Widget
+    {
+        enum {sz = 10};
+        int i[sz];
+    public:
+        Widget() {trace << "*"; }
+        ~Widget(){trace << "~"; }
+        void* operator new(size_t sz)
+        {
+            trace << "Widget::new: " << sz << " bytes" << endl;
+            return ::new char[sz];
+        }
+        void operator delete(void* p)
+        {
+            trace << "Widget::delete: " << endl;
+            return ::delete []p;
+        }
+        void* operator new(size_t sz)
+        {
+            trace << "Widget::new[]: " << sz << " bytes" << endl;
+            return ::new char[sz];
+        }
+        void operator delete[](void* p)
+        {
+            trace << "Widget::delete[]: " << endl;
+            return ::delete []p;
+        }
+    };
+
+    int main()
+    {
+        trace << "new widget" << endl;
+        Widget* w = new Widget;
+        trace << "\ndelete Widget" << endl;
+        delete w;
+        trace << "\nnew widget[25]" << endl;
+        Widget* wa = new Widget[25];
+        trace << "\ndelete []Widget" << endl;
+        delete []wa;
+    }
+```
+
+### 13.5.4 构造函数调用
+
+分析语句：`MyType* f = new MyType;`，调用`new`分配了一个大小等于`MyType`类型的内存，然后在那个内存上调用了`MyType`构造函数。但如果使用了`new`的内存分配没有成功，将会出现什么状况呢？在那种情况下，构造函数不会被调用，所以虽然没能成功地创建对象，但至少没有调用构造函数并传给它一个为0的`this`指针。
+
+> 代码示例：
+[C13_09_NoMemory.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/13.%20Dynamic%20Object%20Creation/C13_09_NoMemory.cpp)
+
+```C++
+
+```
