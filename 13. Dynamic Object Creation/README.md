@@ -571,5 +571,89 @@ C++中的解决方案是把创建一个对象所需的所有动作都结合在�
 [C13_09_NoMemory.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/13.%20Dynamic%20Object%20Creation/C13_09_NoMemory.cpp)
 
 ```C++
+    // C13_09_NoMemory.cpp
+    // Constructor isn't called if new fails
+    #include <iostream>
+    #include <new>
+    using namespace std;
 
+    class NoMemory
+    {
+    public:
+        NoMemory()
+        {
+            cout << "NoMemory::NoMemory()" << endl;
+        }
+        void* operator new(size_t sz) throw(bad_alloc)
+        {
+            cout << "NoMemory::operator new" << endl;
+            throw bad_alloc();
+        }
+    };
+
+    int main()
+    {
+        NoMemory* nm = 0;
+        try{
+            nm = new NoMemory();
+        }catch(bad_alloc)
+        {
+            cerr << "out of memory exception" << endl;
+        }
+        cout << "nm = " << nm << endl;
+    }
 ```
+
+当程序运行时，并没有打印出构造函数的信息，仅仅是打印了`operator new()`和异常处理的信息。因为`new`没有返回，构造函数也没有被调用，当然它的信息就不会被打印出来。
+
+### 13.5.5 定位new和delete
+
+重载`operator new()`还有其他两个不常见的用途。
+
+1. 我们也许会想在内存的指定位置上放置一个对象。这对于面向硬件的内嵌系统特别重要，在这个系统中，一个对象可能和一个特定的硬件是同义的。
+2. 我们也许会想在调用`new`时，能够选择不同的内存分配方案。
+
+这两个特性可以用相同的机制实现：重载的`operator new()`可以带一个或多个参数。正如前面所看到的，第一个参数总是对象的长度，它在内部计算出来并由编译器传递给new。但其他参数可由我们自己定义：一个放置对象的地址、一个是对内存分配函数或对象的引用，或其他任何使我们方便的设置。
+
+例如：`X* xp = new(a) X;`，将a作为第二个参数传给`operator new()`。
+
+> 代码示例：
+[C13_10_PlacementOperatorNew.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/13.%20Dynamic%20Object%20Creation/C13_10_PlacementOperatorNew.cpp)
+
+```C++
+    // C13_10_PlacementOperatorNew.cpp
+    // Placement with operator new()
+    #include <cstddef>
+    #include <iostream>
+    using namespace std;
+
+    class X
+    {
+        int i;
+    public:
+        X(int ii = 0) : i(ii)
+        {
+            cout << "this = " << this << endl;
+        }
+        ~X()
+        {
+            cout << "X::~X(): " << this << endl;
+        }
+        void* operator new(size_t, void* loc)
+        {
+            return loc;
+        }
+    };
+
+    int main()
+    {
+        int l[10];
+        cout << "l = " << l << endl;
+        X* xp = new(l) X(47);   // X at location l
+        xp->X::~X();    // Explicit destructor call
+    }
+```
+
+注意：`operator new()`仅返回了传递给它的指针。因此，调用者可以决定将对象存放在哪里，这时在该指针所指向的那块内存上，作为new表达式一部分的构造函数将被调用。
+
+在销毁对象时将会出现两难选择的局面。因为仅有一个版本的`operator delete`，所以没有办法说“对这个对象使用我的特殊内存释放器”。可以调用析构函数，但不能用动态内存机制释放内存，因为内存不是在堆上分配的。解决方法是用非常特殊的语法：我们可以显式地调用析构函数。
