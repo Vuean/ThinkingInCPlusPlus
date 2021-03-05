@@ -10,7 +10,7 @@ public:
     X() {i = 0;}
     void set(int ii) {i = ii;}
     int read() const {return i;}
-    int premute() {return i = i * 47;}
+    int permute() {return i = i * 47;}
 };
 
 #endif // USEFUL_H
