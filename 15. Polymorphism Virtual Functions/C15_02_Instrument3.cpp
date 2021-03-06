@@ -1,5 +1,5 @@
-// C15_01_Instrument2.cpp
-// Inheritance & upcasting
+// C15_02_Instrument3.cpp
+// Late bidding with the virtual keyword
 #include <iostream>
 using namespace std;
 enum note {middleC, Csharp, Cflat};
@@ -7,7 +7,7 @@ enum note {middleC, Csharp, Cflat};
 class Instrument
 {
 public:
-    void play(note) const 
+    virtual void play(note) const 
     {
         cout << "Instrument::play" << endl;
     }
