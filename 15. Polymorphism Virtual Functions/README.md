@@ -867,3 +867,287 @@ RTTI是有关向下类型转换基类指针到派生类指针的问题，向上�
 
 ### 15.11.1 纯虚析构函数
 
+尽管纯虚析构函数在标准C++中是合法的，但在使用时有一个额外的限制：**必须为纯虚析构函数提供一个函数体**。我们可以看到纯虚
+析构函数和非纯虚析构函数之间惟一的不同之处在于**纯虚析构函数使得基类是抽象类，所以不能创建一个基类的对象**。
+
+> 代码示例：
+[C15_13_UnAbstract.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/15.%20Polymorphism%20Virtual%20Functions/C15_13_UnAbstract.cpp)
+
+```C++
+    // C15_13_UnAbstract.cpp
+    // Pure virtual destructors seem to behave strangely
+
+    class AbstractBase
+    {
+    public:
+        virtual ~AbstractBase() = 0;
+    };
+
+    AbstractBase::~AbstractBase() {}
+
+    class Derived : public AbstractBase {};
+    // No overloading of destructor necessary?
+    int main()
+    {
+        Derived d;
+    }
+```
+
+一般来说，如果在派生类中基类的纯虚函数（和所有其他纯虚函数）没有重新定义，则派生类将会成为抽象类。然而，如果不进行析构函数定义，编译器将会自动地为每个类生成一个析构函数定义。那就是这里所发生的——基类的析构函数被重写（重新定义），因此编译器会提供定义并且派生类实际上不会成为抽象类。
+
+析构函数的纯虚性的惟一效果是阻止基类的实例化。
+
+运行下面的程序，可以看到在派生类版本之后，随着任何其他的析构函数，调用了纯虚函数体。
+
+> 代码示例：
+[C15_14_PureVirtualDestructors.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/15.%20Polymorphism%20Virtual%20Functions/C15_14_PureVirtualDestructors.cpp)
+
+```C++
+    // C15_14_PureVirtualDestructors.cpp
+    // Pure virtual destructors require a function body
+    #include <iostream>
+    using namespace std;
+
+    class Pet
+    {
+    public:
+        virtual ~Pet() = 0;
+    };
+
+    Pet::~Pet()
+    {
+        cout << "~Pet()" << endl;
+    }
+
+    class Dog : public Pet
+    {
+    public:
+        ~Dog()
+        {
+            cout << "~Dog()" << endl;
+        }
+    };
+
+    int main()
+    {
+        Pet* p = new Dog;
+        delete p;
+    }
+```
+
+```C++
+    ~Dog()
+    ~Pet()
+```
+
+作为一个准则，任何时候我们的类中都要有一个虚函数，我们应当立即增加一个虚析构函数（即使它什么也不做）。
+
+### 15.11.2 析构函数中的虚机制
+
+在析构期间，有一些我们可能不希望马上发生的情况。如果正在一个普通的成员函数中，并且调用一个虚函数，则会使用晚捆绑机制来调用这个函数。而对于析构函数；这样不行，不论是虚的还是非虚的。在析构函数中，只有成员函数的“本地”版本被调用；虚机制被忽略。
+
+> 代码示例：
+[C15_15_VirtualsInDestructors.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/15.%20Polymorphism%20Virtual%20Functions/C15_15_VirtualsInDestructors.cpp)
+
+```C++
+    // C15_15_VirtualsInDestructors.cpp
+    // Virtual calls inside destructors
+    #include <iostream>
+    using namespace std;
+
+    class Base
+    {
+    public:
+        virtual ~Base()
+        {
+            cout << "Base()\n";
+            f();
+        }
+        virtual void f() {cout << "Base::f()\n";}
+    };
+
+    class Derived : public Base
+    {
+    public:
+        ~Derived() {cout << "~Derived()\n"; }
+        void f() {cout << "Derived::f()\n";}
+    };
+
+    int main()
+    {
+        Base* bp = new Derived;
+        delete bp;
+    }
+```
+
+输出：
+
+```C++
+    ~Derived()
+    Base()
+    Base::f()
+```
+
+在析构函数的调用中，`Derived::f()`有被调用，即使`f()`是一个虚函数。
+
+### 15.11.3 创建基于对象的继承
+
+通过强制容器内的所有对象从同一个基类继承而来。这就是说，容器容纳了具有同一基类的对象，并随后调用虚函数——特别地，我们可以调用虚析构函数来解决所有权问题。
+
+这种解决方法使用**单根继承**(**singly-rooted hierarch**)或**基于对象的继承**(**object-based hierarchy**)。
+
+## 15.12 运算符重载
+
+我们可以使用virtual运算符。然而，因为我们可能对两个不知道类型的对象进行操作，所以实现virtual运算符通常会很复杂。
+
+> 代码示例：
+[C15_16_OperatorPolumorphism.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/15.%20Polymorphism%20Virtual%20Functions/C15_16_OperatorPolumorphism.cpp)
+
+```C++
+    // C15_16_OperatorPolumorphism.cpp
+    // Polymorphism with overloaded operators
+    #include <iostream>
+    using namespace std;
+
+    class Matrix;
+    class Scalar;
+    class Vector;
+
+    class Math
+    {
+    public:
+        virtual Math& operator*(Math& rv) = 0;
+        virtual Math& multiply(Matrix*) = 0;
+        virtual Math& multiply(Scalar*) = 0;
+        virtual Math& multiply(Vector*) = 0;
+        virtual ~Math() {}
+    };
+
+    class Matrix : public Math
+    {
+    public:
+        Math& operator*(Math& rv)
+        {
+            return rv.multiply(this);
+        }
+        Math& multiply(Matrix*)
+        {
+            cout << "Matrix * Matrix" << endl;
+            return *this;
+        }
+        Math& multiply(Scalar*)
+        {
+            cout << "Scalar * Matrix" << endl;
+            return *this;
+        }
+        Math& multiply(Vector*)
+        {
+            cout << "Vector * Matrix" << endl;
+            return *this;
+        }
+    };
+
+    class Scalar : public Math
+    {
+    public:
+        Math& operator*(Math& rv)
+        {
+            return rv.multiply(this);
+        }
+        Math& multiply(Matrix*)
+        {
+            cout << "Matrix * Scalar" << endl;
+            return *this;
+        }
+        Math& multiply(Scalar*)
+        {
+            cout << "Scalar * Scalar" << endl;
+            return *this;
+        }
+        Math& multiply(Vector*)
+        {
+            cout << "Vector * Scalar" << endl;
+            return *this;
+        }
+    };
+
+    class Vector : public Math
+    {
+    public:
+        Math& operator*(Math& rv)
+        {
+            return rv.multiply(this);
+        }
+        Math& multiply(Matrix*)
+        {
+            cout << "Matrix * Vector" << endl;
+            return *this;
+        }
+        Math& multiply(Scalar*)
+        {
+            cout << "Scalar * Vector" << endl;
+            return *this;
+        }
+        Math& multiply(Vector*)
+        {
+            cout << "Vector * Vector" << endl;
+            return *this;
+        }
+    };
+
+    int main()
+    {
+        Matrix m; Vector v; Scalar s;
+        Math* math[] = {&m, &v, &s};
+        for(int i = 0; i < 3; i++)
+        {
+            for(int j = 0; j < 3; j++)
+            {
+                Math& m1 = *math[i];
+                Math& m2 = *math[j];
+                m1 * m2;
+            }
+        }
+    }
+```
+
+为了简单起见，这里仅重载了`operator*`。重载的目的是使任意两个Math对象相乘并且生成所需的结果——注意矩阵乘以向量和向量乘以矩阵是两个完全不同的操作。
+
+`main()`中的问题在于，表达式`m1* m2`包含了两个向上类型转换的Math引用，因此不知道这两个对象的类型。一个虚函数仅能进行单一指派——即判定一个未知对象的类型。本例中所使用的判定两个对象类型的技术称之为**多重指派**(**multiple dispatching**)，一个单一虚函数调用引起了第二个虚函数调用。在完成第二个调用时，已经得到了这两个对象的类型，于是可以执行正确的操作。
+
+## 15.13 向下类型转换
+
+C++提供了一个特殊的称为`dynamic_cast`的**显示类型转换**(**explicit cast**)，它就是一种**安全类型向下类型转换**(**type-safe downcast**)的操作。当使用`dynamic_cast`来试着向下类型转换一个特定的类型，仅当类型转换是正确的井且是成功的时，返回值会是**一个指向所需类型的指针**，否则它将返回0来表示这并不是正确的类型。
+
+> 代码示例：
+[C15_17_DynamicCast.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/15.%20Polymorphism%20Virtual%20Functions/C15_17_DynamicCast.cpp)
+
+```C++
+    // C15_17_DynamicCast.cpp
+    #include <iostream>
+    using namespace std;
+
+    class Pet
+    {
+    public:
+        virtual ~Pet() {}
+    };
+
+    class Dog : public Pet {};
+    class Cat : public Pet {};
+
+    int main()
+    {
+        Pet* b = new Cat;   // UpCast
+        // Try to cast it to Dog*
+        Dog* d1 = dynamic_cast<Dog*>(b);
+        // Try to cast it to Cat*
+        Cat* d2 = dynamic_cast<Cat*>(b);
+        cout << "d1 = " << (long)d1 << endl;
+        cout << "d2 = " << (long)d2 << endl;
+    }
+```
+
+当使用`dynamic_cast`时，必须对一个真正多态的层次进行操作——它含有虚函数。
+
+`dynamic_cast`运行时需要一点额外的开销。
