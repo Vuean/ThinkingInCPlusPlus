@@ -523,5 +523,347 @@ virtual关键字可以改变程序的效率。
 [C15_08_AddingVirtuals.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/15.%20Polymorphism%20Virtual%20Functions/C15_08_AddingVirtuals.cpp)
 
 ```C++
+    // C15_08_AddingVirtuals.cpp
+    // Adding Virtual in derivation
+    #include <iostream>
+    #include <string>
+    using namespace std;
+    class Pet
+    {
+        string pname;
+    public:
+        Pet(const string& petName) : pname(petName) {}
+        virtual string name() const { return pname; }
+        virtual string speak() const { return "";}
+    };
 
+    class Dog : public Pet
+    {
+        string name;
+    public:
+        Dog(const string& petName) : Pet(petName) {}
+        // New Virtual funciton in the Dog class
+        virtual string sit() const 
+        {
+            return Pet::name() + " sits";
+        }
+        string speak() const
+        {
+            return Pet::name() + " says 'Bark!'";
+        }
+    };
+
+    int main()
+    {
+        Pet* p[] = {new Pet("generic"), new Dog("Bob")};
+        cout << "p[0]->speak() = " << p[0]->speak() << endl;
+        cout << "p[1]->speak() = " << p[1]->speak() << endl;
+        // cout << "p[1]->sit() = " << p[1]->sit() << endl;
+    }
 ```
+
+类`Pet`中含有2个虚函数：`speak()`和`name()`，而在类`Dog`中又增加了第3个称为`sit()`的虚函数，并且重新定义了`speak()`的含义。
+
+在通常情况下，我们并不知道指针实际上指向哪一种特殊子类的对象，而目前的问题是必须知道所有对象的确切类型，因为我们可能在进行不正确的虚函数调用。然而对于有些情况，如果知道保存在一般容器中的所有对象的确切类型，会使我们的设计工作在最佳状态（或者没有选择）。这就是**运行时类型辨认**(**Run-Time Type
+Identification, RTTI**)问题。
+
+RTTI是有关向下类型转换基类指针到派生类指针的问题，向上类型转换是自动发生的，不需强制，因为它是绝对安全的。向下类型转换是不安全的，因为这里没有关于实际类型的编译时信息，所以必须准确地知道这个类实际上是什么类型。如果把它转换成错误的类型，就会出现麻烦。
+
+### 15.8.1 对象切片
+
+当多态地处理对象时，传地址与传值有明显的不同。所有在这里已经看到的例子和将会看到的例子都是传地址的，而不是传值的。这是因为地址都有相同的长度，传递派生类（它通常稍大一些）对象的地址和传递基类（它通常更小一点）对象的地址是相同的。如前面所述，这是使用多态的目的，即让对基类对象操作的代码也能透明地操作派生类对象。
+
+如果对一个对象进行向上类型转换，而不使用地址或引用，发生的事情将会使我们吃惊这个对象被“切片”，直到剩下来的是适合于目的的子对象。
+
+> 代码示例：
+[C15_09_ObjectSlicing.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/15.%20Polymorphism%20Virtual%20Functions/C15_09_ObjectSlicing.cpp)
+
+```C++
+    // C15_09_ObjectSlicing.cpp
+    #include <iostream>
+    #include <string>
+    using namespace std;
+
+    class Pet
+    {
+        string pname;
+    public:
+        Pet(const string& name) : pname(name) {}
+        virtual string name() const { return pname; }
+        virtual string description() const 
+        { 
+            return "This is " + pname;
+        }
+    };
+
+    class Dog : public Pet
+    {
+        string favoriteActivity;
+    public:
+        Dog(const string& name, const string& activity)
+            : Pet(name), favoriteActivity(activity) {}
+        string description() const
+        {
+            return Pet::name() + " likes to " + favoriteActivity;
+        }
+    };
+
+    void describe(Pet p)
+    {
+        cout << p.description() << endl;
+    }
+
+    int main()
+    {
+        Pet p("Alfred");
+        Dog d("Fluffy", "sleep");
+        describe(p);
+        describe(d);
+    }
+```
+
+在这个程序中，发生了两件事情。第一，`describe()`接受的是一个Pet对象（而不是指针或引用），所以`describe()`中的任何调用都将引起一个与Pet大小相同的对象压栈并在调用后清除。这意味着，如果一个由Pet派生来的类的对象被传给`describe()`，则编译器会接受它，但只拷贝这个对象的对应于Pet的部分，切除这个对象的派生部分。
+
+## 15.9 重载和重新定义
+
+重新定义一个基类中的重载函数将会隐藏所有该函数的其他基类版本。对14章中的NameHiding.cpp进行修改：
+
+> 代码示例：
+[C15_10_NameHiding2.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/15.%20Polymorphism%20Virtual%20Functions/C15_10_NameHiding2.cpp)
+
+```C++
+    // C15_10_NameHiding2.cpp
+    // Virtual functions restrict overloading
+    #include <iostream>
+    #include <string>
+    using namespace std;
+
+    class Base
+    {
+    public:
+        virtual int f() const
+        {
+            cout << "Base::f()\n";
+            return 1;
+        }
+        virtual void f(string) const {}
+        virtual void g() const {}
+    };
+
+    class Derived1 : public Base
+    {
+    public:
+        void g() const {}
+    };
+
+    class Derived2 : public Base
+    {
+    public:
+        // Overloading a virtual function:
+        int f() const
+        {
+            cout << "Derived2::f()\n";
+            return 2;
+        }
+    };
+
+    class Derived3 : public Base
+    {
+    public:
+        // Cannot change return type
+        // void f() const {cout << "Derived3::f()\n";}
+    };
+
+    class Derived4 : public Base
+    {
+    public:
+        // Change argument list:
+        int f(int) const
+        {
+            cout << "Derived4::f() \n";
+            return 4;
+        }
+    };
+
+    int main()
+    {
+        string s("hello");
+        Derived1 d1;
+        int x = d1.f();
+        d1.f(s);
+
+        Derived2 d2;
+        x = d2.f();
+        // d2.f(s);    // string version hidden
+
+        Derived4 d4;
+        x = d4.f(1);
+        // x = d4.f(); // f() version hidden
+        // d2.f(s);// string version hidden
+
+        Base& br = d4;  // Upcast
+        // br.f(1);    // Derived version unavailable
+        br.f();     // Base verison available
+        br.f(s);
+    }
+```
+
+首先注意到，在`Derived3`中，编译器**不允许我们改变重新定义过的函数的返回值**（如果`f()`不是虚函数，则是允许的）。这是一个非常重要的限制。
+
+**如果重新定义了基类中的一个重载成员函数，则在派生类中其他的重载函数将会被隐藏。**
+
+### 15.9.1 变量返回类型
+
+上例的类`Derived3`显示了我们不能在重新定义过程中修改虚函数的返回类型。通常是这样的，但也有特例，我们可以稍稍修改返回类型。**如果返回一个指向基类的指针或引用，则该函数的重新定义版本将会从基类返回的内容中返回一个指向派生类的指针或引用**。
+
+> 代码示例：
+[C15_11_VariantReturn.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/15.%20Polymorphism%20Virtual%20Functions/C15_11_VariantReturn.cpp)
+
+```C++
+    // C15_11_VariantReturn.cpp
+    // Returing a pointer or reference to a derived
+    // type during ovverriding
+    #include <iostream>
+    #include <string>
+    using namespace std;
+    class PetFood
+    {
+    public:
+        virtual string foodType() const = 0;
+    };
+
+    class Pet
+    {
+    public:
+        virtual string type() const = 0;
+        virtual PetFood* eats() const = 0;
+    };
+
+    class Bird : public Pet
+    {
+    public:
+        string type() const {return "Bird";}
+        class BirdFood : public PetFood
+        {
+        public:
+            string foodType() const
+            {
+                return "Bird food";
+            }
+        };
+        // Upcast to base type
+        PetFood* eats() {return &bf;}
+    private:
+        BirdFood bf;
+    };
+
+    class Cat : public Pet
+    {
+    public:
+        string type() const {return "Cat";}
+        class CatFood : public PetFood
+        {
+        public:
+            string foodType() const {return "Cat food";}
+        };
+        // Return exact type instead:
+        CatFood* eats() {return &cf;}
+    private:
+        CatFood cf;
+    };
+
+    int main()
+    {
+        Bird b;
+        Cat c;
+        Pet* p[] = {&b, &c};
+        for(int i = 0; i < sizeof p / sizeof *p; i++)
+        {
+            cout << p[i]->type() << " eats "
+                << p[i]->eats()->foodType() << endl;
+        }
+        // Can return the exact type:
+        Cat::CatFood* cf = c.eats();
+        Bird::BirdFood* bf;
+        // Cannot return the exact type:
+        // bf = b.eats();
+        // Must downcast:
+        bf = dynamic_cast<Bird::BirdFood*>(b.eats());
+    }
+```
+
+`Bird::eats()`把`BirdFood`向上类型转换到`PetFood`。
+
+## 15.10 虚函数和构造函数
+
+当创建一个包含有虚函数的对象时，必须初始化它的VPTR以指向相应的VTABLE。设置VPTR也是构造函数的工作。如果该类含有虚函数，则生成的构造函数将会包含相应的VPTR初始化代码。
+
+这涉及效率。**内联**(**inline**)函数的作用是对小函数减少调用代价。
+
+### 15.10.1 构造函数调用次序
+
+所有基类构造函数总是在继承类构造函数中被调用。
+
+### 15.10.2 虚函数在构造函数中的行为
+
+对于在构造函数中调用一个虚函数的情况，被调用的只是这个函数的本地版本。也就是说，虚机制在构造函数中不工作。
+
+## 15.11 析构函数和虚拟析构函数
+
+构造函数是不能为虚函数的。但析构函数能够且常常必须是虚的。
+
+构造函数和析构函数是类层次进行调用的惟一地方。
+
+> 代码示例：
+[C15_12_VirtualDestructors.cpp](https://github.com/Vuean/ThinkingInCPlusPlus/blob/master/15.%20Polymorphism%20Virtual%20Functions/C15_12_VirtualDestructors.cpp)
+
+```C++
+    // C15_12_VirtualDestructors.cpp
+    // Behavior of virtual vs. non-virtual destructor
+    #include <iostream>
+    using namespace std;
+    class Base1
+    {
+    public:
+        ~Base1() {cout << "~Base1()\n";};
+    };
+
+    class Derived1 : public Base1
+    {
+    public:
+        ~Derived1() {cout << "~Derived1()\n"; }
+    };
+
+    class Base2
+    {
+    public:
+        virtual ~Base2() {cout << "~Base2()\n"; }
+    };
+
+    class Derived2 : public Base2
+    {
+    public:
+        ~Derived2() {cout << "~Derived2()\n"; }
+    };
+
+    int main()
+    {
+        Base1 *bp = new Derived1;
+        delete bp;
+        Base2* b2p = new Derived2;
+        delete b2p;
+    }
+```
+
+输出:
+
+```C++
+    ~Base1()
+    ~Derived2()
+    ~Base2()
+```
+
+当运行这个程序时，将会看到`delete bp`只调用基类的析构函数。而当`delete b2p`调用时，在基类的析构函数执行后，派生类析构函数将会执行，这正是我们所希望的。
+
+### 15.11.1 纯虚析构函数
+
